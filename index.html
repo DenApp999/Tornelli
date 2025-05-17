@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Generatore QR Tornelli</title>
+  <script src="https://cdn.rawgit.com/davidshimjs/qrcodejs/gh-pages/qrcode.min.js"></script>
+  <style>
+    body {
+      text-align: center;
+      font-family: Arial, sans-serif;
+    }
+
+    #avvia {
+      margin: 20px;
+      padding: 10px 20px;
+      font-size: 16px;
+    }
+
+    #qrcode {
+      margin-top: 20px;
+      display: inline-block;
+    }
+  </style>
+</head>
+<body>
+  <h1>QR TORNELLI BY Denis</h1>
+  <h2>Solo per personale autorizzato</h2>
+  
+  <button id="avvia">Genera QR</button>
+  <div id="qrcode"></div>
+
+  <script>
+    document.getElementById("avvia").addEventListener("click", function() {
+      let prefisso = "24887-01-00000";
+      let numeroCasuale = Math.floor(Math.random() * 1000) + 1;
+      let numeroFormattato = String(numeroCasuale).padStart(4, '0');
+
+      let oraCorrente = new Date();
+      let giorno = String(oraCorrente.getDate()).padStart(2, '0');
+      let mese = String(oraCorrente.getMonth() + 1).padStart(2, '0');
+      let anno = oraCorrente.getFullYear().toString().slice(2);
+      let ore = String(oraCorrente.getHours()).padStart(2, '0');
+      let minuti = String(oraCorrente.getMinutes()).padStart(2, '0');
+
+      let testoCompleto = prefisso + numeroFormattato + "-" + giorno + mese + anno + "-" + ore + minuti;
+
+      let qrcodeDiv = document.getElementById("qrcode");
+      qrcodeDiv.innerHTML = "";
+      new QRCode(qrcodeDiv, {
+        text: testoCompleto,
+        width: 256,
+        height: 256
+      });
+    });
+  </script>
+</body>
+</html>
