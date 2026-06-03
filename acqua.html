@@ -151,6 +151,18 @@ font-weight:700;font-size:0.95rem;cursor:pointer
 #btn-confirm{background:#e74c3c;color:#fff}
 #btn-cancel{background:#ccc;color:#333}
 .header h1{-webkit-user-select:none;user-select:none;cursor:default}
+@media screen and (orientation:portrait) and (min-device-width:768px){
+#rotate-hint{
+position:fixed;top:0;left:0;right:0;bottom:0;
+background:#2980b9;color:#fff;display:flex;
+flex-direction:column;justify-content:center;align-items:center;
+z-index:9999;font-size:1.5rem;text-align:center;padding:40px
+}
+#rotate-hint span{font-size:3rem;margin-bottom:20px}
+}
+@media screen and (orientation:landscape){
+#rotate-hint{display:none!important}
+}
 #install-banner{
 display:none;
 position:fixed;bottom:0;left:0;right:0;
@@ -178,6 +190,10 @@ padding:0 4px;line-height:1
 </style>
 </head>
 <body>
+
+<div id="rotate-hint">
+<span>&#x1f4f1;</span>
+Ruota il tablet in<br>orizzontale</div>
 
 <div id="reset-overlay">
 <div id="reset-box">
@@ -349,6 +365,11 @@ render()
 if ('serviceWorker' in navigator) {
 navigator.serviceWorker.register('sw.js')
 }
+
+try { screen.orientation.lock('landscape') } catch(e) {}
+document.addEventListener('click', () => {
+try { screen.orientation.lock('landscape') } catch(e) {}
+}, {once:true})
 
 let deferredPrompt = null
 const installBanner = document.getElementById('install-banner')
