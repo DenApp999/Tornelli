@@ -2,7 +2,7 @@
 "name": "Segna la Tua Acqua",
 "short_name": "Conta Acqua",
 "description": "Conta le bottiglie d'acqua che bevi ogni giorno",
-"start_url": "index.html?source=pwa",
+"start_url": "acqua.html?source=pwa",
 "display": "standalone",
 "background_color": "#f5f5f5",
 "theme_color": "#2980b9",
