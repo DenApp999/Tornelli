@@ -371,6 +371,18 @@ document.addEventListener('click', () => {
 try { screen.orientation.lock('landscape') } catch(e) {}
 }, {once:true})
 
+let wakeLock = null
+async function keepAwake(){
+try {
+wakeLock = await navigator.wakeLock.request('screen')
+wakeLock.addEventListener('release', () => {})
+} catch(e) {}
+}
+keepAwake()
+document.addEventListener('visibilitychange', () => {
+if (document.visibilityState === 'visible') keepAwake()
+})
+
 let deferredPrompt = null
 const installBanner = document.getElementById('install-banner')
 const installBtn = document.getElementById('install-btn')
