@@ -3,6 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#2980b9">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Conta Acqua">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="images/icon-192.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="images/icon-192.svg">
 <title>Segna la Tua Acqua</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -143,7 +150,7 @@ font-weight:700;font-size:0.95rem;cursor:pointer
 }
 #btn-confirm{background:#e74c3c;color:#fff}
 #btn-cancel{background:#ccc;color:#333}
-.header h1{-webkit-user-select:none;user-select:none}
+.header h1{-webkit-user-select:none;user-select:none;cursor:default}
 </style>
 </head>
 <body>
@@ -173,43 +180,35 @@ font-weight:700;font-size:0.95rem;cursor:pointer
 <div class="water-card card-naturale">
 <div class="card-title">Acqua Naturale</div>
 <div class="bottle-area">
-<svg class="bottle-svg" viewBox="0 0 120 320" xmlns="http://www.w3.org/2000/svg">
+<svg class="bottle-svg" viewBox="0 0 200 320" xmlns="http://www.w3.org/2000/svg">
 <defs>
-<linearGradient id="gBodyN" x1="60" y1="30" x2="60" y2="300" gradientUnits="userSpaceOnUse">
+<linearGradient id="gBodyN" x1="100" y1="30" x2="100" y2="300" gradientUnits="userSpaceOnUse">
 <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"/>
 <stop offset="30%" stop-color="#eaf6ff"/>
 <stop offset="100%" stop-color="#d4eefb"/>
 </linearGradient>
-<linearGradient id="gWaterN" x1="60" y1="100" x2="60" y2="290" gradientUnits="userSpaceOnUse">
-<stop offset="0%" stop-color="#e8f4fd"/>
-<stop offset="100%" stop-color="#bde0f5"/>
-</linearGradient>
-<linearGradient id="gCapN" x1="60" y1="0" x2="60" y2="28" gradientUnits="userSpaceOnUse">
+<linearGradient id="gCapN" x1="100" y1="0" x2="100" y2="28" gradientUnits="userSpaceOnUse">
 <stop offset="0%" stop-color="#1565c0"/>
 <stop offset="100%" stop-color="#0d47a1"/>
 </linearGradient>
-<linearGradient id="gLabeN" x1="60" y1="120" x2="60" y2="220" gradientUnits="userSpaceOnUse">
-<stop offset="0%" stop-color="#ffffff"/>
-<stop offset="100%" stop-color="#f0f8ff"/>
-</linearGradient>
 <filter id="shadowN"><feDropShadow dx="2" dy="4" stdDeviation="3" flood-opacity="0.15"/></filter>
 </defs>
-<ellipse cx="60" cy="308" rx="32" ry="6" fill="#000" opacity="0.08"/>
+<ellipse cx="100" cy="308" rx="44" ry="6" fill="#000" opacity="0.08"/>
 <g filter="url(#shadowN)">
-<path d="M42 52 C42 42 48 36 60 36 C72 36 78 42 78 52 L78 62 L42 62 Z" fill="url(#gBodyN)" stroke="#b0d4e8" stroke-width="1.5"/>
-<rect x="38" y="62" width="44" height="228" rx="6" fill="url(#gBodyN)" stroke="#b0d4e8" stroke-width="1.5"/>
-<path d="M38 270 Q38 290 60 290 Q82 290 82 270" fill="url(#gBodyN)" stroke="#b0d4e8" stroke-width="1.5"/>
-<rect x="44" y="36" width="32" height="28" rx="3" fill="#bde4f4" opacity="0.3"/>
-<path d="M48 20 L48 8 C48 3 52 0 60 0 C68 0 72 3 72 8 L72 20" fill="url(#gCapN)" stroke="#0d47a1" stroke-width="1"/>
-<rect x="46" y="0" width="28" height="10" rx="3" fill="#1565c0"/>
-<rect x="44" y="5" width="32" height="3" rx="1" fill="#42a5f5" opacity="0.4"/>
-<rect x="36" y="130" width="48" height="70" rx="4" fill="url(#gLabeN)" stroke="#c5dbe8" stroke-width="1"/>
-<path d="M48 142 C52 138 56 136 60 136 C64 136 68 138 72 142" fill="none" stroke="#2196f3" stroke-width="1.5"/>
-<ellipse cx="60" cy="148" rx="8" ry="8" fill="none" stroke="#2196f3" stroke-width="1"/>
-<text x="60" y="168" text-anchor="middle" font-size="7" fill="#1a5276" font-weight="800" font-family="Arial">SAN BENEDETTO</text>
-<text x="60" y="180" text-anchor="middle" font-size="5.5" fill="#2e86c1" font-family="Arial">Acqua Minerale</text>
-<text x="60" y="190" text-anchor="middle" font-size="5" fill="#5dade2" font-family="Arial">Naturale</text>
-<rect x="36" y="210" width="48" height="3" rx="1" fill="#5dade2" opacity="0.3"/>
+<path d="M74 52 C74 38 84 32 100 32 C116 32 126 38 126 52 L126 66 L74 66 Z" fill="url(#gBodyN)" stroke="#b0d4e8" stroke-width="1.5"/>
+<rect x="66" y="66" width="68" height="228" rx="10" fill="url(#gBodyN)" stroke="#b0d4e8" stroke-width="1.5"/>
+<path d="M66 270 Q66 290 100 290 Q134 290 134 270" fill="url(#gBodyN)" stroke="#b0d4e8" stroke-width="1.5"/>
+<rect x="76" y="36" width="48" height="30" rx="4" fill="#bde4f4" opacity="0.3"/>
+<path d="M78 20 L78 8 C78 3 82 0 100 0 C118 0 122 3 122 8 L122 20" fill="url(#gCapN)" stroke="#0d47a1" stroke-width="1"/>
+<rect x="78" y="0" width="44" height="12" rx="4" fill="#1565c0"/>
+<rect x="74" y="4" width="52" height="4" rx="1" fill="#42a5f5" opacity="0.4"/>
+<rect x="60" y="125" width="80" height="90" rx="6" fill="#ffffff" stroke="#c5dbe8" stroke-width="1"/>
+<path d="M76 140 C80 136 88 134 100 134 C112 134 120 136 124 140" fill="none" stroke="#2196f3" stroke-width="1.6"/>
+<ellipse cx="100" cy="150" rx="12" ry="11" fill="none" stroke="#2196f3" stroke-width="1.2"/>
+<text x="100" y="172" text-anchor="middle" font-size="11" fill="#1a5276" font-weight="900" font-family="Arial,sans-serif">SAN BENEDETTO</text>
+<text x="100" y="188" text-anchor="middle" font-size="7.5" fill="#2e86c1" font-family="Arial,sans-serif">Acqua Minerale</text>
+<text x="100" y="203" text-anchor="middle" font-size="7" fill="#5dade2" font-family="Arial,sans-serif">Naturale</text>
+<rect x="60" y="218" width="80" height="2" rx="1" fill="#5dade2" opacity="0.3"/>
 </g>
 </svg>
 </div>
@@ -224,45 +223,44 @@ font-weight:700;font-size:0.95rem;cursor:pointer
 <div class="water-card card-frizzante">
 <div class="card-title">Acqua Frizzante</div>
 <div class="bottle-area">
-<svg class="bottle-svg" viewBox="0 0 120 320" xmlns="http://www.w3.org/2000/svg">
+<svg class="bottle-svg" viewBox="0 0 200 320" xmlns="http://www.w3.org/2000/svg">
 <defs>
-<linearGradient id="gBodyF" x1="60" y1="30" x2="60" y2="300" gradientUnits="userSpaceOnUse">
+<linearGradient id="gBodyF" x1="100" y1="30" x2="100" y2="300" gradientUnits="userSpaceOnUse">
 <stop offset="0%" stop-color="#e3f2fd"/>
 <stop offset="40%" stop-color="#bbdefb"/>
 <stop offset="100%" stop-color="#90caf9"/>
 </linearGradient>
-<linearGradient id="gCapF" x1="60" y1="0" x2="60" y2="28" gradientUnits="userSpaceOnUse">
+<linearGradient id="gCapF" x1="100" y1="0" x2="100" y2="28" gradientUnits="userSpaceOnUse">
 <stop offset="0%" stop-color="#e53935"/>
 <stop offset="100%" stop-color="#c62828"/>
 </linearGradient>
-<linearGradient id="gLabeF" x1="60" y1="120" x2="60" y2="220" gradientUnits="userSpaceOnUse">
-<stop offset="0%" stop-color="#ffffff"/>
-<stop offset="100%" stop-color="#f0f8ff"/>
-</linearGradient>
 <filter id="shadowF"><feDropShadow dx="2" dy="4" stdDeviation="3" flood-opacity="0.15"/></filter>
 </defs>
-<ellipse cx="60" cy="308" rx="32" ry="6" fill="#000" opacity="0.08"/>
+<ellipse cx="100" cy="308" rx="44" ry="6" fill="#000" opacity="0.08"/>
 <g filter="url(#shadowF)">
-<path d="M42 52 C42 42 48 36 60 36 C72 36 78 42 78 52 L78 62 L42 62 Z" fill="url(#gBodyF)" stroke="#90caf9" stroke-width="1.5"/>
-<rect x="38" y="62" width="44" height="228" rx="6" fill="url(#gBodyF)" stroke="#90caf9" stroke-width="1.5"/>
-<path d="M38 270 Q38 290 60 290 Q82 290 82 270" fill="url(#gBodyF)" stroke="#90caf9" stroke-width="1.5"/>
-<rect x="44" y="36" width="32" height="28" rx="3" fill="#90caf9" opacity="0.3"/>
-<path d="M48 20 L48 8 C48 3 52 0 60 0 C68 0 72 3 72 8 L72 20" fill="url(#gCapF)" stroke="#c62828" stroke-width="1"/>
-<rect x="46" y="0" width="28" height="10" rx="3" fill="#e53935"/>
-<rect x="44" y="5" width="32" height="3" rx="1" fill="#ef9a9a" opacity="0.4"/>
-<circle cx="50" cy="100" r="4" fill="white" opacity="0.35"/>
-<circle cx="70" cy="130" r="3" fill="white" opacity="0.3"/>
-<circle cx="45" cy="170" r="5" fill="white" opacity="0.35"/>
-<circle cx="65" cy="200" r="3" fill="white" opacity="0.3"/>
-<circle cx="50" cy="240" r="4" fill="white" opacity="0.35"/>
-<circle cx="72" cy="260" r="2.5" fill="white" opacity="0.3"/>
-<rect x="36" y="130" width="48" height="70" rx="4" fill="url(#gLabeF)" stroke="#b0d4e8" stroke-width="1"/>
-<path d="M48 142 C52 138 56 136 60 136 C64 136 68 138 72 142" fill="none" stroke="#2196f3" stroke-width="1.5"/>
-<ellipse cx="60" cy="148" rx="8" ry="8" fill="none" stroke="#2196f3" stroke-width="1"/>
-<text x="60" y="168" text-anchor="middle" font-size="7" fill="#1a5276" font-weight="800" font-family="Arial">SAN BENEDETTO</text>
-<text x="60" y="180" text-anchor="middle" font-size="5.5" fill="#e74c3c" font-family="Arial">Acqua Minerale</text>
-<text x="60" y="190" text-anchor="middle" font-size="5" fill="#ef5350" font-family="Arial">Frizzante</text>
-<rect x="36" y="210" width="48" height="3" rx="1" fill="#ef5350" opacity="0.3"/>
+<path d="M74 52 C74 38 84 32 100 32 C116 32 126 38 126 52 L126 66 L74 66 Z" fill="url(#gBodyF)" stroke="#90caf9" stroke-width="1.5"/>
+<rect x="66" y="66" width="68" height="228" rx="10" fill="url(#gBodyF)" stroke="#90caf9" stroke-width="1.5"/>
+<path d="M66 270 Q66 290 100 290 Q134 290 134 270" fill="url(#gBodyF)" stroke="#90caf9" stroke-width="1.5"/>
+<rect x="76" y="36" width="48" height="30" rx="4" fill="#90caf9" opacity="0.3"/>
+<path d="M78 20 L78 8 C78 3 82 0 100 0 C118 0 122 3 122 8 L122 20" fill="url(#gCapF)" stroke="#c62828" stroke-width="1"/>
+<rect x="78" y="0" width="44" height="12" rx="4" fill="#e53935"/>
+<rect x="74" y="4" width="52" height="4" rx="1" fill="#ef9a9a" opacity="0.4"/>
+<circle cx="80" cy="105" r="5" fill="white" opacity="0.35"/>
+<circle cx="112" cy="130" r="4" fill="white" opacity="0.3"/>
+<circle cx="76" cy="170" r="6" fill="white" opacity="0.35"/>
+<circle cx="108" cy="205" r="4.5" fill="white" opacity="0.3"/>
+<circle cx="80" cy="245" r="5" fill="white" opacity="0.35"/>
+<circle cx="114" cy="270" r="3.5" fill="white" opacity="0.3"/>
+<circle cx="94" cy="140" r="3.5" fill="white" opacity="0.25"/>
+<circle cx="96" cy="195" r="4" fill="white" opacity="0.25"/>
+<circle cx="88" cy="225" r="3" fill="white" opacity="0.25"/>
+<rect x="60" y="125" width="80" height="90" rx="6" fill="#ffffff" stroke="#b0d4e8" stroke-width="1"/>
+<path d="M76 140 C80 136 88 134 100 134 C112 134 120 136 124 140" fill="none" stroke="#2196f3" stroke-width="1.6"/>
+<ellipse cx="100" cy="150" rx="12" ry="11" fill="none" stroke="#2196f3" stroke-width="1.2"/>
+<text x="100" y="172" text-anchor="middle" font-size="11" fill="#1a5276" font-weight="900" font-family="Arial,sans-serif">SAN BENEDETTO</text>
+<text x="100" y="188" text-anchor="middle" font-size="7.5" fill="#e74c3c" font-family="Arial,sans-serif">Acqua Minerale</text>
+<text x="100" y="203" text-anchor="middle" font-size="7" fill="#ef5350" font-family="Arial,sans-serif">Frizzante</text>
+<rect x="60" y="218" width="80" height="2" rx="1" fill="#ef5350" opacity="0.3"/>
 </g>
 </svg>
 </div>
@@ -301,9 +299,10 @@ document.getElementById('c-naturale').textContent = data.naturale
 document.getElementById('c-frizzante').textContent = data.frizzante
 }
 
-document.querySelectorAll('.add-button').forEach(el => {
-el.addEventListener('click', () => {
-const k = el.dataset.key
+document.querySelectorAll('.water-card').forEach(el => {
+el.addEventListener('click', (e) => {
+if (e.target.closest('#reset-overlay')) return
+const k = el.querySelector('.add-button').dataset.key
 data[k]++
 render()
 save()

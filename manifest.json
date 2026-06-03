@@ -1,0 +1,24 @@
+{
+"name": "Segna la Tua Acqua",
+"short_name": "Conta Acqua",
+"description": "Conta le bottiglie d'acqua che bevi ogni giorno",
+"start_url": "index.html?source=pwa",
+"display": "standalone",
+"background_color": "#f5f5f5",
+"theme_color": "#2980b9",
+"orientation": "portrait",
+"icons": [
+{
+"src": "images/icon-192.svg",
+"sizes": "192x192",
+"type": "image/svg+xml",
+"purpose": "any maskable"
+},
+{
+"src": "images/icon-512.svg",
+"sizes": "512x512",
+"type": "image/svg+xml",
+"purpose": "any maskable"
+}
+]
+}
