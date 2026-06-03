@@ -151,6 +151,30 @@ font-weight:700;font-size:0.95rem;cursor:pointer
 #btn-confirm{background:#e74c3c;color:#fff}
 #btn-cancel{background:#ccc;color:#333}
 .header h1{-webkit-user-select:none;user-select:none;cursor:default}
+#install-banner{
+display:none;
+position:fixed;bottom:0;left:0;right:0;
+background:#2980b9;color:#fff;
+padding:14px 20px;
+z-index:999;
+justify-content:space-between;align-items:center;
+gap:12px;
+font-size:0.95rem;
+box-shadow:0 -4px 12px rgba(0,0,0,0.15)
+}
+#install-banner.show{display:flex}
+#install-banner button{
+background:#fff;color:#2980b9;
+border:none;padding:10px 20px;
+border-radius:8px;font-weight:800;
+font-size:0.95rem;cursor:pointer;
+white-space:nowrap
+}
+#install-banner .close{
+background:transparent;color:rgba(255,255,255,0.7);
+border:none;font-size:1.4rem;cursor:pointer;
+padding:0 4px;line-height:1
+}
 </style>
 </head>
 <body>
@@ -274,6 +298,12 @@ font-weight:700;font-size:0.95rem;cursor:pointer
 
 </div>
 
+<div id="install-banner">
+<span>Installa l'app per un accesso rapido</span>
+<button id="install-btn">Installa</button>
+<button class="close" id="install-close">&times;</button>
+</div>
+
 <script>
 const data = {naturale:0, frizzante:0}
 const key = 'acqua-counts'
@@ -315,6 +345,33 @@ document.getElementById('month').textContent = now.getMonth() + 1
 document.getElementById('year').textContent = now.getFullYear()
 
 render()
+
+if ('serviceWorker' in navigator) {
+navigator.serviceWorker.register('sw.js')
+}
+
+let deferredPrompt = null
+const installBanner = document.getElementById('install-banner')
+const installBtn = document.getElementById('install-btn')
+const installClose = document.getElementById('install-close')
+
+window.addEventListener('beforeinstallprompt', (e) => {
+e.preventDefault()
+deferredPrompt = e
+installBanner.classList.add('show')
+})
+
+installBtn.addEventListener('click', async () => {
+if (!deferredPrompt) return
+deferredPrompt.prompt()
+const result = await deferredPrompt.userChoice
+deferredPrompt = null
+installBanner.classList.remove('show')
+})
+
+installClose.addEventListener('click', () => {
+installBanner.classList.remove('show')
+})
 
 let pressTimer = null
 const trigger = document.getElementById('reset-trigger')
