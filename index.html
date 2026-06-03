@@ -1,358 +1,56 @@
 <!DOCTYPE html>
-<html lang="it">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="theme-color" content="#2980b9">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Conta Acqua">
-<link rel="manifest" href="manifest.json">
-<link rel="icon" href="images/icon-192.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="images/icon-192.svg">
-<title>Segna la Tua Acqua</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-html,body{
-width:100%;height:100%;
-font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
-background:#f5f5f5;
-overflow-x:hidden
-}
-body{
-padding:1vh 1vw;
-display:flex;flex-direction:column;
-min-height:100vh;min-height:100dvh
-}
-.header{
-text-align:center;
-margin-bottom:1vh;
-flex-shrink:0
-}
-.header h1{
-font-size:clamp(1.2rem,3.5vw,2.2rem);
-font-weight:900;
-color:#000;
-text-transform:uppercase;
-letter-spacing:1px
-}
-.date-display{
-display:flex;
-justify-content:center;
-gap:clamp(10px,3vw,25px);
-font-size:clamp(0.9rem,2vw,1.2rem);
-color:#333;
-margin-top:0.5vh
-}
-.date-display span{
-font-weight:600
-}
-.main-container{
-display:flex;
-gap:clamp(8px,1.5vw,20px);
-justify-content:center;
-flex:1;
-min-height:0;
-max-height:85vh
-}
-.water-card{
-flex:1;
-border-radius:clamp(12px,2vw,20px);
-padding:clamp(10px,2vw,25px) clamp(8px,1.5vw,20px);
-text-align:center;
-display:flex;flex-direction:column;
-overflow:hidden
-}
-.card-naturale{
-background:linear-gradient(180deg,#d6eaf8 0%,#aed6f1 50%,#85c1e9 100%)
-}
-.card-frizzante{
-background:linear-gradient(180deg,#d5f5e3 0%,#abebc6 50%,#82e0aa 100%)
-}
-.card-title{
-font-size:clamp(0.95rem,2.5vw,1.6rem);
-font-weight:900;
-color:#1a1a1a;
-margin-bottom:1vh;
-text-transform:uppercase;
-flex-shrink:0
-}
-.bottle-area{
-flex:1;
-display:flex;
-justify-content:center;
-align-items:center;
-min-height:0
-}
-.bottle-svg{
-max-height:100%;
-width:auto;
-max-width:45vw
-}
-.count-section{
-flex-shrink:0;
-margin:1vh 0
-}
-.totale-label{
-font-size:clamp(0.75rem,1.8vw,1rem);
-color:#333;
-font-weight:700
-}
-.count-number{
-font-size:clamp(3rem,10vw,5.5rem);
-font-weight:900;
-color:#1a1a1a;
-line-height:1;
-margin:0.5vh 0
-}
-.bottiglie-label{
-font-size:clamp(0.85rem,2vw,1.3rem);
-font-weight:800;
-color:#1a1a1a;
-text-transform:uppercase
-}
-.add-button{
-width:100%;
-padding:clamp(12px,2.5vw,22px);
-color:white;
-font-size:clamp(0.8rem,2vw,1.1rem);
-font-weight:800;
-text-transform:uppercase;
-border:none;
-border-radius:clamp(6px,1vw,12px);
-cursor:pointer;
-transition:transform 0.12s, opacity 0.2s;
-flex-shrink:0;
-letter-spacing:0.5px;
-margin-top:auto
-}
-.add-button:active{transform:scale(0.96)}
-.btn-naturale{background:#2980b9}
-.btn-frizzante{background:#27ae60}
-.add-button:hover{opacity:0.88}
-#reset-overlay{
-position:fixed;top:0;left:0;right:0;bottom:0;
-background:rgba(0,0,0,0.7);
-display:none;justify-content:center;align-items:center;
-z-index:1000
-}
-#reset-overlay.show{display:flex}
-#reset-box{
-background:#fff;border-radius:16px;padding:30px 40px;
-text-align:center;max-width:320px;width:85%
-}
-#reset-box h2{font-size:1.2rem;color:#333;margin-bottom:8px}
-#reset-box p{font-size:0.9rem;color:#666;margin-bottom:20px}
-#reset-box .btns{display:flex;gap:12px}
-#reset-box .btns button{
-flex:1;padding:12px;border:none;border-radius:8px;
-font-weight:700;font-size:0.95rem;cursor:pointer
-}
-#btn-confirm{background:#e74c3c;color:#fff}
-#btn-cancel{background:#ccc;color:#333}
-.header h1{-webkit-user-select:none;user-select:none;cursor:default}
-</style>
+  <title>Generatore QR Tornelli</title>
+  <script src="https://cdn.rawgit.com/davidshimjs/qrcodejs/gh-pages/qrcode.min.js"></script>
+  <style>
+    body {
+      text-align: center;
+      font-family: Arial, sans-serif;
+    }
+
+    #avvia {
+      margin: 20px;
+      padding: 10px 20px;
+      font-size: 16px;
+    }
+
+    #qrcode {
+      margin-top: 20px;
+      display: inline-block;
+    }
+  </style>
 </head>
 <body>
+  <h1>QR TORNELLI BY Denis</h1>
+  <h2>Solo per personale autorizzato</h2>
+  
+  <button id="avvia">Genera QR</button>
+  <div id="qrcode"></div>
 
-<div id="reset-overlay">
-<div id="reset-box">
-<h2>Reset contatori?</h2>
-<p>Azzera entrambi i contatori a zero.</p>
-<div class="btns">
-<button id="btn-confirm">Sì, resetta</button>
-<button id="btn-cancel">Annulla</button>
-</div>
-</div>
-</div>
+  <script>
+    document.getElementById("avvia").addEventListener("click", function() {
+      let prefisso = "24887-01-00000";
+      let numeroCasuale = Math.floor(Math.random() * 1000) + 1;
+      let numeroFormattato = String(numeroCasuale).padStart(4, '0');
 
-<div class="header">
-<h1 id="reset-trigger">Segna la Tua Acqua</h1>
-<div class="date-display">
-<span id="day"></span>
-<span id="month"></span>
-<span id="year"></span>
-</div>
-</div>
+      let oraCorrente = new Date();
+      let giorno = String(oraCorrente.getDate()).padStart(2, '0');
+      let mese = String(oraCorrente.getMonth() + 1).padStart(2, '0');
+      let anno = oraCorrente.getFullYear().toString().slice(2);
+      let ore = String(oraCorrente.getHours()).padStart(2, '0');
+      let minuti = String(oraCorrente.getMinutes()).padStart(2, '0');
 
-<div class="main-container">
+      let testoCompleto = prefisso + numeroFormattato + "-" + giorno + mese + anno + "-" + ore + minuti;
 
-<div class="water-card card-naturale">
-<div class="card-title">Acqua Naturale</div>
-<div class="bottle-area">
-<svg class="bottle-svg" viewBox="0 0 200 320" xmlns="http://www.w3.org/2000/svg">
-<defs>
-<linearGradient id="gBodyN" x1="100" y1="30" x2="100" y2="300" gradientUnits="userSpaceOnUse">
-<stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"/>
-<stop offset="30%" stop-color="#eaf6ff"/>
-<stop offset="100%" stop-color="#d4eefb"/>
-</linearGradient>
-<linearGradient id="gCapN" x1="100" y1="0" x2="100" y2="28" gradientUnits="userSpaceOnUse">
-<stop offset="0%" stop-color="#1565c0"/>
-<stop offset="100%" stop-color="#0d47a1"/>
-</linearGradient>
-<filter id="shadowN"><feDropShadow dx="2" dy="4" stdDeviation="3" flood-opacity="0.15"/></filter>
-</defs>
-<ellipse cx="100" cy="308" rx="44" ry="6" fill="#000" opacity="0.08"/>
-<g filter="url(#shadowN)">
-<path d="M74 52 C74 38 84 32 100 32 C116 32 126 38 126 52 L126 66 L74 66 Z" fill="url(#gBodyN)" stroke="#b0d4e8" stroke-width="1.5"/>
-<rect x="66" y="66" width="68" height="228" rx="10" fill="url(#gBodyN)" stroke="#b0d4e8" stroke-width="1.5"/>
-<path d="M66 270 Q66 290 100 290 Q134 290 134 270" fill="url(#gBodyN)" stroke="#b0d4e8" stroke-width="1.5"/>
-<rect x="76" y="36" width="48" height="30" rx="4" fill="#bde4f4" opacity="0.3"/>
-<path d="M78 20 L78 8 C78 3 82 0 100 0 C118 0 122 3 122 8 L122 20" fill="url(#gCapN)" stroke="#0d47a1" stroke-width="1"/>
-<rect x="78" y="0" width="44" height="12" rx="4" fill="#1565c0"/>
-<rect x="74" y="4" width="52" height="4" rx="1" fill="#42a5f5" opacity="0.4"/>
-<rect x="60" y="125" width="80" height="90" rx="6" fill="#ffffff" stroke="#c5dbe8" stroke-width="1"/>
-<path d="M76 140 C80 136 88 134 100 134 C112 134 120 136 124 140" fill="none" stroke="#2196f3" stroke-width="1.6"/>
-<ellipse cx="100" cy="150" rx="12" ry="11" fill="none" stroke="#2196f3" stroke-width="1.2"/>
-<text x="100" y="172" text-anchor="middle" font-size="11" fill="#1a5276" font-weight="900" font-family="Arial,sans-serif">SAN BENEDETTO</text>
-<text x="100" y="188" text-anchor="middle" font-size="7.5" fill="#2e86c1" font-family="Arial,sans-serif">Acqua Minerale</text>
-<text x="100" y="203" text-anchor="middle" font-size="7" fill="#5dade2" font-family="Arial,sans-serif">Naturale</text>
-<rect x="60" y="218" width="80" height="2" rx="1" fill="#5dade2" opacity="0.3"/>
-</g>
-</svg>
-</div>
-<div class="count-section">
-<div class="totale-label">TOTALE OGGI:</div>
-<div class="count-number" id="c-naturale">0</div>
-<div class="bottiglie-label">BOTTIGLIE</div>
-</div>
-<button class="add-button btn-naturale" data-key="naturale">CLICCA PER<br>AGGIUNGERE</button>
-</div>
-
-<div class="water-card card-frizzante">
-<div class="card-title">Acqua Frizzante</div>
-<div class="bottle-area">
-<svg class="bottle-svg" viewBox="0 0 200 320" xmlns="http://www.w3.org/2000/svg">
-<defs>
-<linearGradient id="gBodyF" x1="100" y1="30" x2="100" y2="300" gradientUnits="userSpaceOnUse">
-<stop offset="0%" stop-color="#e3f2fd"/>
-<stop offset="40%" stop-color="#bbdefb"/>
-<stop offset="100%" stop-color="#90caf9"/>
-</linearGradient>
-<linearGradient id="gCapF" x1="100" y1="0" x2="100" y2="28" gradientUnits="userSpaceOnUse">
-<stop offset="0%" stop-color="#e53935"/>
-<stop offset="100%" stop-color="#c62828"/>
-</linearGradient>
-<filter id="shadowF"><feDropShadow dx="2" dy="4" stdDeviation="3" flood-opacity="0.15"/></filter>
-</defs>
-<ellipse cx="100" cy="308" rx="44" ry="6" fill="#000" opacity="0.08"/>
-<g filter="url(#shadowF)">
-<path d="M74 52 C74 38 84 32 100 32 C116 32 126 38 126 52 L126 66 L74 66 Z" fill="url(#gBodyF)" stroke="#90caf9" stroke-width="1.5"/>
-<rect x="66" y="66" width="68" height="228" rx="10" fill="url(#gBodyF)" stroke="#90caf9" stroke-width="1.5"/>
-<path d="M66 270 Q66 290 100 290 Q134 290 134 270" fill="url(#gBodyF)" stroke="#90caf9" stroke-width="1.5"/>
-<rect x="76" y="36" width="48" height="30" rx="4" fill="#90caf9" opacity="0.3"/>
-<path d="M78 20 L78 8 C78 3 82 0 100 0 C118 0 122 3 122 8 L122 20" fill="url(#gCapF)" stroke="#c62828" stroke-width="1"/>
-<rect x="78" y="0" width="44" height="12" rx="4" fill="#e53935"/>
-<rect x="74" y="4" width="52" height="4" rx="1" fill="#ef9a9a" opacity="0.4"/>
-<circle cx="80" cy="105" r="5" fill="white" opacity="0.35"/>
-<circle cx="112" cy="130" r="4" fill="white" opacity="0.3"/>
-<circle cx="76" cy="170" r="6" fill="white" opacity="0.35"/>
-<circle cx="108" cy="205" r="4.5" fill="white" opacity="0.3"/>
-<circle cx="80" cy="245" r="5" fill="white" opacity="0.35"/>
-<circle cx="114" cy="270" r="3.5" fill="white" opacity="0.3"/>
-<circle cx="94" cy="140" r="3.5" fill="white" opacity="0.25"/>
-<circle cx="96" cy="195" r="4" fill="white" opacity="0.25"/>
-<circle cx="88" cy="225" r="3" fill="white" opacity="0.25"/>
-<rect x="60" y="125" width="80" height="90" rx="6" fill="#ffffff" stroke="#b0d4e8" stroke-width="1"/>
-<path d="M76 140 C80 136 88 134 100 134 C112 134 120 136 124 140" fill="none" stroke="#2196f3" stroke-width="1.6"/>
-<ellipse cx="100" cy="150" rx="12" ry="11" fill="none" stroke="#2196f3" stroke-width="1.2"/>
-<text x="100" y="172" text-anchor="middle" font-size="11" fill="#1a5276" font-weight="900" font-family="Arial,sans-serif">SAN BENEDETTO</text>
-<text x="100" y="188" text-anchor="middle" font-size="7.5" fill="#e74c3c" font-family="Arial,sans-serif">Acqua Minerale</text>
-<text x="100" y="203" text-anchor="middle" font-size="7" fill="#ef5350" font-family="Arial,sans-serif">Frizzante</text>
-<rect x="60" y="218" width="80" height="2" rx="1" fill="#ef5350" opacity="0.3"/>
-</g>
-</svg>
-</div>
-<div class="count-section">
-<div class="totale-label">TOTALE OGGI:</div>
-<div class="count-number" id="c-frizzante">0</div>
-<div class="bottiglie-label">BOTTIGLIE</div>
-</div>
-<button class="add-button btn-frizzante" data-key="frizzante">CLICCA PER<br>AGGIUNGERE</button>
-</div>
-
-</div>
-
-<script>
-const data = {naturale:0, frizzante:0}
-const key = 'acqua-counts'
-const today = new Date().toDateString()
-const savedDay = localStorage.getItem(key+'-day')
-
-if (savedDay === today) {
-const saved = localStorage.getItem(key)
-if (saved) {
-const p = JSON.parse(saved)
-data.naturale = p.naturale ?? 0
-data.frizzante = p.frizzante ?? 0
-}
-}
-
-function save(){
-localStorage.setItem(key, JSON.stringify(data))
-localStorage.setItem(key+'-day', today)
-}
-
-function render(){
-document.getElementById('c-naturale').textContent = data.naturale
-document.getElementById('c-frizzante').textContent = data.frizzante
-}
-
-document.querySelectorAll('.water-card').forEach(el => {
-el.addEventListener('click', (e) => {
-if (e.target.closest('#reset-overlay')) return
-const k = el.querySelector('.add-button').dataset.key
-data[k]++
-render()
-save()
-})
-})
-
-const now = new Date()
-document.getElementById('day').textContent = now.getDate()
-document.getElementById('month').textContent = now.getMonth() + 1
-document.getElementById('year').textContent = now.getFullYear()
-
-render()
-
-if ('serviceWorker' in navigator) {
-navigator.serviceWorker.register('sw.js')
-}
-
-let pressTimer = null
-const trigger = document.getElementById('reset-trigger')
-const overlay = document.getElementById('reset-overlay')
-
-function startPress(e){
-e.preventDefault()
-pressTimer = setTimeout(() => {
-overlay.classList.add('show')
-}, 800)
-}
-function cancelPress(){
-clearTimeout(pressTimer)
-pressTimer = null
-}
-
-trigger.addEventListener('mousedown', startPress)
-trigger.addEventListener('mouseup', cancelPress)
-trigger.addEventListener('mouseleave', cancelPress)
-trigger.addEventListener('touchstart', startPress, {passive:false})
-trigger.addEventListener('touchend', cancelPress)
-trigger.addEventListener('touchcancel', cancelPress)
-
-document.getElementById('btn-confirm').addEventListener('click', () => {
-data.naturale = 0
-data.frizzante = 0
-render()
-save()
-overlay.classList.remove('show')
-})
-document.getElementById('btn-cancel').addEventListener('click', () => {
-overlay.classList.remove('show')
-})
-</script>
-
+      let qrcodeDiv = document.getElementById("qrcode");
+      qrcodeDiv.innerHTML = "";
+      new QRCode(qrcodeDiv, {
+        text: testoCompleto,
+        width: 256,
+        height: 256
+      });
+    });
+  </script>
 </body>
 </html>
