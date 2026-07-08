@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>PRESENZE v3.1</title>
+<title>PRESENZE v3.2</title>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -63,7 +63,7 @@ h1 { font-size: 1.8rem; margin: 16px 0 8px; color: #00e676; text-transform: uppe
 </head>
 <body>
 
-<h1>&#x23F3; PRESENZE <span style="font-size:0.7rem;color:#888;letter-spacing:0">v3.1</span></h1>
+<h1>&#x23F3; PRESENZE <span style="font-size:0.7rem;color:#888;letter-spacing:0">v3.2</span></h1>
 <div id="counter"></div>
 <div id="reader">
 <canvas id="canvas-scan" style="display:none"></canvas>
@@ -88,7 +88,7 @@ h1 { font-size: 1.8rem; margin: 16px 0 8px; color: #00e676; text-transform: uppe
 
 <script>
 const CF_STORAGE_KEY = 'timbra_cd_dati';
-const VERSION = 'v3.1';
+const VERSION = 'v3.2';
 
 let lastCf = '';
 let cameraStarted = false;
@@ -390,22 +390,26 @@ document.getElementById('btn-ocr').addEventListener('click', function() {
     mostraStatus('Riconosco testo...', '');
     tesseractWorker.recognize(imgData).then(function(res) {
         var testo = res.data.text.toUpperCase();
+        var parole = testo.replace(/\s+/g, ' ').trim();
+        mostraStatus('Trovato: "' + parole.substr(0, 40) + '"', '');
         var match = testo.match(/[A-Z]{6}\d{2}[A-Z]\d{2}[A-Z]\d{3}[A-Z]/);
-        if (match && validaCF(match[0])) {
-            var cf = match[0];
-            if (cf === lastCf) { mostraStatus('Gia timbrato', 'err'); setTimeout(function(){mostraStatus('In attesa di una tessera...','');},1500); return; }
-            lastCf = cf;
-            var dati = getDati();
-            var giorno = oggiStr();
-            var tipo = tipoTimbratura(dati, cf, giorno);
-            if (tipo === null) { mostraStatus('Limite 6 per ' + cf, 'err'); return; }
-            registraTimbratura(cf);
-            aggiornaArchivio();
-            setTimeout(function() { lastCf = ''; }, 2000);
-        } else {
-            mostraStatus('CF non trovato, riprova', 'err');
-            setTimeout(function() { mostraStatus('In attesa di una tessera...', ''); }, 2500);
-        }
+        setTimeout(function() {
+            if (match) {
+                var cf = match[0];
+                if (cf === lastCf) { mostraStatus('Gia timbrato', 'err'); setTimeout(function(){mostraStatus('In attesa di una tessera...','');},1500); return; }
+                lastCf = cf;
+                var dati = getDati();
+                var giorno = oggiStr();
+                var tipo = tipoTimbratura(dati, cf, giorno);
+                if (tipo === null) { mostraStatus('Limite 6 per ' + cf, 'err'); return; }
+                registraTimbratura(cf);
+                aggiornaArchivio();
+                setTimeout(function() { lastCf = ''; }, 2000);
+            } else {
+                mostraStatus('Nessun CF valido nel testo', 'err');
+                setTimeout(function() { mostraStatus('In attesa di una tessera...', ''); }, 3000);
+            }
+        }, 1500);
     }).catch(function(err) {
         mostraStatus('Errore: ' + err, 'err');
         setTimeout(function() { mostraStatus('In attesa di una tessera...', ''); }, 2000);
