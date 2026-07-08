@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Timbra CD</title>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', sans-serif; background: #0b0e14; color: #fff; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 16px; }
+h1 { font-size: 1.8rem; margin: 16px 0 8px; color: #00e676; text-transform: uppercase; letter-spacing: 2px; }
+#reader { width: 100%; max-width: 500px; margin: 12px auto; border-radius: 12px; overflow: hidden; background: #1a1f2b; }
+#reader video { border-radius: 12px; }
+#reader__dashboard_silent, #reader__dashboard_spinner { display: none !important; }
+#status { font-size: 1.5rem; font-weight: bold; text-align: center; min-height: 60px; display: flex; align-items: center; justify-content: center; width: 100%; max-width: 500px; border-radius: 12px; margin: 8px auto; padding: 12px; transition: all 0.3s; background: #1a1f2b; color: #888; }
+#status.ok { background: #003d1a; color: #00e676; font-size: 2rem; animation: flash 0.6s ease; }
+#status.err { background: #3d0000; color: #ff5252; }
+@keyframes flash { 0% { transform: scale(1); } 50% { transform: scale(1.08); } 100% { transform: scale(1); } }
+#counter { font-size: 1rem; color: #aaa; margin: 4px 0 12px; }
+#oggi { background: #1a1f2b; border-radius: 12px; padding: 12px 16px; width: 100%; max-width: 500px; margin: 8px auto; }
+#oggi h3 { color: #00e676; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+#oggi div { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #2a2f3b; font-size: 0.85rem; }
+#oggi div span:first-child { color: #fff; font-weight: 600; }
+#oggi div span:last-child { color: #aaa; }
+#oggi .entrata { border-left: 3px solid #00e676; padding-left: 8px; }
+#oggi .uscita { border-left: 3px solid #ff5252; padding-left: 8px; }
+#stats { margin-top: 12px; width: 100%; max-width: 500px; }
+#stats summary { cursor: pointer; color: #00e676; font-size: 0.9rem; padding: 8px; background: #1a1f2b; border-radius: 8px; text-align: center; }
+#stats-content { margin-top: 8px; background: #1a1f2b; border-radius: 12px; padding: 12px; max-height: 300px; overflow-y: auto; font-size: 0.8rem; display: none; }
+#stats-content.open { display: block; }
+#stats-content table { width: 100%; border-collapse: collapse; }
+#stats-content th { position: sticky; top: 0; background: #1a1f2b; color: #00e676; text-align: left; padding: 4px 6px; border-bottom: 2px solid #00e676; font-size: 0.75rem; text-transform: uppercase; }
+#stats-content td { padding: 4px 6px; border-bottom: 1px solid #2a2f3b; }
+#btn-reset { margin-top: 16px; padding: 8px 20px; background: #3d0000; color: #ff5252; border: 1px solid #ff5252; border-radius: 8px; cursor: pointer; font-size: 0.8rem; }
+#btn-reset:hover { background: #5a0000; }
+</style>
+</head>
+<body>
+
+<h1>&#x23F3; Timbra CD</h1>
+<div id="counter"></div>
+<div id="reader"></div>
+<div id="status">In attesa di una tessera...</div>
+<div id="oggi"></div>
+<details id="stats">
+<summary>&#x1F4CB; Archivio timbrature</summary>
+<div id="stats-content"></div>
+</details>
+<button id="btn-reset" style="display:none">&#x1F5D1; Reset dati</button>
+
+<script>
+const CF_STORAGE_KEY = 'timbra_cd_dati';
+
+let html5QrCode = null;
+let lastCf = '';
+let cameraStarted = false;
+
+function getDati() {
+    try { return JSON.parse(localStorage.getItem(CF_STORAGE_KEY)) || {}; }
+    catch { return {}; }
+}
+
+function salvaDati(dati) {
+    localStorage.setItem(CF_STORAGE_KEY, JSON.stringify(dati));
+}
+
+function oggiStr() {
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+function meseStr() {
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+}
+
+function oraStr() {
+    const d = new Date();
+    return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') + ':' + String(d.getSeconds()).padStart(2, '0');
+}
+
+function tipoTimbratura(dati, cf, giorno) {
+    const timbrature = dati[cf]?.[meseStr()]?.[giorno] || [];
+    const count = timbrature.length;
+    if (count >= 6) return null;
+    return count % 2 === 0 ? 'ENTRATA' : 'USCITA';
+}
+
+function registraTimbratura(cf) {
+    const dati = getDati();
+    const giorno = oggiStr();
+    const mese = meseStr();
+    const ora = oraStr();
+
+    if (!dati[cf]) dati[cf] = {};
+    if (!dati[cf][mese]) dati[cf][mese] = {};
+    if (!dati[cf][mese][giorno]) dati[cf][mese][giorno] = [];
+
+    const tipo = tipoTimbratura(dati, cf, giorno);
+    if (tipo === null) {
+        mostraStatus('Limite 6 timbrature raggiunto per oggi!', 'err');
+        return;
+    }
+
+    dati[cf][mese][giorno].push({ ora, tipo });
+    salvaDati(dati);
+    mostraStatus('TIMBRATO !!!', 'ok');
+    aggiornaOggi(cf);
+    aggiornaCounter(cf);
+}
+
+function mostraStatus(msg, tipo) {
+    const el = document.getElementById('status');
+    el.textContent = msg;
+    el.className = tipo || '';
+}
+
+function aggiornaCounter(cf) {
+    const dati = getDati();
+    const giorno = oggiStr();
+    const timbrature = dati[cf]?.[meseStr()]?.[giorno] || [];
+    const prossimo = timbrature.length % 2 === 0 ? 'ENTRATA' : 'USCITA';
+    const rimanenti = 6 - timbrature.length;
+    document.getElementById('counter').textContent =
+        (timbrature.length > 0 ? cf + ' - ' : '') +
+        timbrature.length + '/6 timbrature oggi - Prossima: ' + prossimo +
+        (rimanenti <= 0 ? ' (COMPLETATO)' : '');
+}
+
+function aggiornaOggi(cf) {
+    const dati = getDati();
+    const giorno = oggiStr();
+    const mese = meseStr();
+    const el = document.getElementById('oggi');
+    const timbrature = dati[cf]?.[mese]?.[giorno] || [];
+
+    if (timbrature.length === 0) {
+        el.innerHTML = '<h3>&#x1F4C5; Oggi</h3><div style="color:#666;text-align:center;padding:12px">Nessuna timbratura</div>';
+        return;
+    }
+
+    let html = '<h3>&#x1F4C5; Oggi - ' + cf + '</h3>';
+    timbrature.forEach((t, i) => {
+        const cls = t.tipo === 'ENTRATA' ? 'entrata' : 'uscita';
+        html += '<div class="' + cls + '"><span>' + (i + 1) + '. ' + t.tipo + '</span><span>' + t.ora + '</span></div>';
+    });
+    el.innerHTML = html;
+}
+
+function aggiornaArchivio() {
+    const dati = getDati();
+    const el = document.getElementById('stats-content');
+    const cfs = Object.keys(dati);
+    if (cfs.length === 0) {
+        el.innerHTML = '<div style="color:#666;text-align:center;padding:12px">Nessun dato</div>';
+        return;
+    }
+
+    let html = '';
+    cfs.sort().forEach(cf => {
+        html += '<h4 style="color:#00e676;margin:12px 0 4px">' + cf + '</h4>';
+        html += '<table><tr><th>Giorno</th><th>Ora</th><th>Tipo</th></tr>';
+        const mesi = Object.keys(dati[cf]).sort().reverse();
+        mesi.forEach(mese => {
+            const giorni = Object.keys(dati[cf][mese]).sort().reverse();
+            giorni.forEach(g => {
+                dati[cf][mese][g].forEach(t => {
+                    html += '<tr><td>' + g.slice(5) + '</td><td>' + t.ora + '</td><td>' + t.tipo + '</td></tr>';
+                });
+            });
+        });
+        html += '</table>';
+    });
+    el.innerHTML = html;
+}
+
+function onScanSuccess(decodedText) {
+    const cf = decodedText.toUpperCase().trim();
+    if (!cf || cf === lastCf) return;
+
+    const dati = getDati();
+    const giorno = oggiStr();
+    const tipo = tipoTimbratura(dati, cf, giorno);
+    if (tipo === null) {
+        mostraStatus('Limite 6 timbrature raggiunto per ' + cf, 'err');
+        return;
+    }
+
+    lastCf = cf;
+    registraTimbratura(cf);
+    aggiornaArchivio();
+
+    setTimeout(() => { lastCf = ''; }, 2000);
+}
+
+function avviaCamera() {
+    if (cameraStarted) return;
+    const readerEl = document.getElementById('reader');
+    readerEl.innerHTML = '';
+
+    html5QrCode = new Html5Qrcode("reader");
+    html5QrCode.start(
+        { facingMode: "environment" },
+        { fps: 15, qrbox: { width: 300, height: 300 } },
+        onScanSuccess,
+        () => {}
+    ).then(() => {
+        cameraStarted = true;
+        mostraStatus('In attesa di una tessera...', '');
+    }).catch(err => {
+        console.error(err);
+        mostraStatus('Errore fotocamera: ' + err, 'err');
+        readerEl.innerHTML = '<div style="padding:40px;text-align:center;color:#ff5252">Errore fotocamera<br><small>' + err + '</small></div>';
+    });
+}
+
+document.getElementById('stats').addEventListener('toggle', function() {
+    const content = document.getElementById('stats-content');
+    content.classList.toggle('open', this.open);
+    if (this.open) aggiornaArchivio();
+});
+
+document.getElementById('btn-reset').addEventListener('click', function() {
+    if (confirm('Cancellare TUTTI i dati di timbratura?')) {
+        localStorage.removeItem(CF_STORAGE_KEY);
+        location.reload();
+    }
+});
+
+window.addEventListener('load', () => {
+    const dati = getDati();
+    if (Object.keys(dati).length > 0) {
+        document.getElementById('btn-reset').style.display = '';
+        const cfs = Object.keys(dati);
+        aggiornaOggi(cfs[0]);
+        aggiornaCounter(cfs[0]);
+    }
+    avviaCamera();
+});
+
+window.addEventListener('beforeunload', () => {
+    if (html5QrCode) {
+        try { html5QrCode.stop(); } catch {}
+    }
+});
+</script>
+</body>
+</html>
