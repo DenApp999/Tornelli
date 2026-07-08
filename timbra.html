@@ -6,8 +6,9 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>PRESENZE v3.2</title>
+<title>PRESENZE v3.3</title>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Segoe UI', sans-serif; background: #0b0e14; color: #fff; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 16px; }
@@ -63,7 +64,7 @@ h1 { font-size: 1.8rem; margin: 16px 0 8px; color: #00e676; text-transform: uppe
 </head>
 <body>
 
-<h1>&#x23F3; PRESENZE <span style="font-size:0.7rem;color:#888;letter-spacing:0">v3.2</span></h1>
+<h1>&#x23F3; PRESENZE <span style="font-size:0.7rem;color:#888;letter-spacing:0">v3.3</span></h1>
 <div id="counter"></div>
 <div id="reader">
 <canvas id="canvas-scan" style="display:none"></canvas>
@@ -88,7 +89,7 @@ h1 { font-size: 1.8rem; margin: 16px 0 8px; color: #00e676; text-transform: uppe
 
 <script>
 const CF_STORAGE_KEY = 'timbra_cd_dati';
-const VERSION = 'v3.2';
+const VERSION = 'v3.3';
 
 let lastCf = '';
 let cameraStarted = false;
@@ -334,45 +335,10 @@ document.getElementById('cf-input').addEventListener('keydown', function(e) {
     if (e.key === 'Enter') document.getElementById('btn-manuale').click();
 });
 
-var tesseractReady = false;
-var tesseractWorker = null;
-
-function preloadTesseract() {
-    mostraStatus('Precarico OCR...', '');
-    var s = document.createElement('script');
-    s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
-    s.onload = function() {
-        mostraStatus('Inizializzo OCR (lingua ITA)...', '');
-        Tesseract.createWorker('ita', 0, {
-            logger: function(m) {
-                if (m.status === 'loading tesseract core') mostraStatus('OCR: core...', '');
-                else if (m.status === 'initializing tesseract') mostraStatus('OCR: init...', '');
-                else if (m.status === 'loading language traineddata') mostraStatus('OCR: scarico lingua ITA...', '');
-                else if (m.status === 'initializing api') { tesseractReady = true; mostraStatus('OCR pronto!', ''); setTimeout(function(){mostraStatus('In attesa di una tessera...','');},1000); }
-            }
-        }).then(function(worker) {
-            tesseractWorker = worker;
-        }).catch(function(err) {
-            mostraStatus('Errore OCR: ' + err, 'err');
-            setTimeout(function(){mostraStatus('In attesa di una tessera...','');},2000);
-        });
-    };
-    s.onerror = function() {
-        mostraStatus('Errore download OCR', 'err');
-        setTimeout(function(){mostraStatus('In attesa di una tessera...','');},2000);
-    };
-    document.head.appendChild(s);
-}
-
 document.getElementById('btn-ocr').addEventListener('click', function() {
     if (!cameraStarted) { mostraStatus('Attendi fotocamera', 'err'); return; }
     var vid = document.querySelector('#reader video');
     if (!vid || vid.readyState < 2) { mostraStatus('Attendi fotocamera', 'err'); return; }
-
-    if (!tesseractReady || !tesseractWorker) {
-        mostraStatus('OCR non ancora pronto, attendi...', 'err');
-        return;
-    }
 
     var w = vid.videoWidth, h = vid.videoHeight;
     scanCanvas.width = w; scanCanvas.height = h;
@@ -387,31 +353,34 @@ document.getElementById('btn-ocr').addEventListener('click', function() {
     ctx.putImageData(imageData, 0, 0);
     var imgData = scanCanvas.toDataURL('image/png');
 
-    mostraStatus('Riconosco testo...', '');
-    tesseractWorker.recognize(imgData).then(function(res) {
-        var testo = res.data.text.toUpperCase();
-        var parole = testo.replace(/\s+/g, ' ').trim();
-        mostraStatus('Trovato: "' + parole.substr(0, 40) + '"', '');
-        var match = testo.match(/[A-Z]{6}\d{2}[A-Z]\d{2}[A-Z]\d{3}[A-Z]/);
-        setTimeout(function() {
-            if (match) {
-                var cf = match[0];
-                if (cf === lastCf) { mostraStatus('Gia timbrato', 'err'); setTimeout(function(){mostraStatus('In attesa di una tessera...','');},1500); return; }
-                lastCf = cf;
+    mostraStatus('OCR in corso...', '');
+    Tesseract.recognize(imgData, 'eng', {
+        tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+    }).then(function(res) {
+        var testo = res.data.text.replace(/\s/g, '').toUpperCase();
+        var parole = res.data.text.replace(/\s+/g, ' ').trim();
+        var match16 = testo.match(/[A-Z0-9]{16,}/);
+
+        if (match16) {
+            var candidato = match16[0].substr(0, 16);
+            mostraStatus('Rilevato: ' + candidato + ' (' + parole.substr(0, 30) + ')', '');
+            setTimeout(function() {
+                if (candidato === lastCf) { mostraStatus('Gia timbrato', 'err'); setTimeout(function(){mostraStatus('In attesa','');},1500); return; }
+                lastCf = candidato;
                 var dati = getDati();
                 var giorno = oggiStr();
-                var tipo = tipoTimbratura(dati, cf, giorno);
-                if (tipo === null) { mostraStatus('Limite 6 per ' + cf, 'err'); return; }
-                registraTimbratura(cf);
+                var tipo = tipoTimbratura(dati, candidato, giorno);
+                if (tipo === null) { mostraStatus('Limite 6 per ' + candidato, 'err'); return; }
+                registraTimbratura(candidato);
                 aggiornaArchivio();
                 setTimeout(function() { lastCf = ''; }, 2000);
-            } else {
-                mostraStatus('Nessun CF valido nel testo', 'err');
-                setTimeout(function() { mostraStatus('In attesa di una tessera...', ''); }, 3000);
-            }
-        }, 1500);
+            }, 1200);
+        } else {
+            mostraStatus('Nessun CF: "' + parole.substr(0, 40) + '"', 'err');
+            setTimeout(function() { mostraStatus('In attesa di una tessera...', ''); }, 3000);
+        }
     }).catch(function(err) {
-        mostraStatus('Errore: ' + err, 'err');
+        mostraStatus('Errore OCR: ' + err, 'err');
         setTimeout(function() { mostraStatus('In attesa di una tessera...', ''); }, 2000);
     });
 });
@@ -439,7 +408,6 @@ window.addEventListener('load', function() {
         aggiornaCounter(cfs[0]);
     }
     avviaCamera();
-    setTimeout(preloadTesseract, 2000);
     document.getElementById('btn-cambia-camera').addEventListener('click', function() {
         if (!html5QrCode) return;
         cameraFacing = cameraFacing === 'user' ? 'environment' : 'user';
