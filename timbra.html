@@ -6,25 +6,16 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>PRESENZE v3.4</title>
-<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<title>PRESENZE v3.5</title>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Segoe UI', sans-serif; background: #0b0e14; color: #fff; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 16px; }
 h1 { font-size: 1.8rem; margin: 16px 0 8px; color: #00e676; text-transform: uppercase; letter-spacing: 2px; }
-#reader { width: 100%; max-width: 500px; min-height: 240px; margin: 12px auto; border-radius: 12px; overflow: hidden; background: #1a1f2b; position: relative; }
-#reader video { width: 100%; height: auto; max-height: 320px; display: block; object-fit: cover; filter: grayscale(100%) contrast(200%); border-radius: 12px; }
-#reader__scan_region { min-height: 240px; }
-#overlay-guida { position: absolute; top: 8px; left: 0; right: 0; text-align: center; color: rgba(255,255,255,0.5); font-size: 0.75rem; pointer-events: none; z-index: 2; }
-#freeze-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 3; border-radius: 12px; }
-#freeze-overlay div { color: #00e676; font-size: 1.2rem; font-weight: bold; animation: pulse 0.8s infinite; }
-@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
-#reader__dashboard_silent, #reader__dashboard_spinner { display: none !important; }
-#btn-cattura { padding: 12px 24px; background: #00e676; color: #000; border: none; border-radius: 50px; font-size: 1.1rem; font-weight: bold; cursor: pointer; margin: 4px auto; width: 90%; max-width: 500px; }
-#btn-cattura:active { opacity: 0.7; }
-#btn-cattura:disabled { background: #333; color: #666; cursor: not-allowed; }
-#btn-cambia-camera { padding: 6px 14px; background: transparent; color: #888; border: 1px solid #444; border-radius: 20px; cursor: pointer; font-size: 0.8rem; }
+#cam-container { width: 100%; max-width: 500px; position: relative; margin: 12px auto; border-radius: 12px; overflow: hidden; background: #1a1f2b; }
+#camera { width: 100%; height: auto; max-height: 320px; display: block; object-fit: cover; border-radius: 12px; }
+#crop-guide { position: absolute; left: 10%; right: 10%; top: 35%; bottom: 35%; border: 2px dashed #ffd740; border-radius: 4px; pointer-events: none; z-index: 2; }
+#crop-guide:after { content: 'Allinea il CF qui'; position: absolute; left: 50%; bottom: -24px; transform: translateX(-50%); color: #ffd740; font-size: 0.7rem; white-space: nowrap; }
 #btn-ocr { padding: 14px 24px; background: #ffd740; color: #000; border: none; border-radius: 50px; font-size: 1.1rem; font-weight: bold; cursor: pointer; margin: 6px auto; width: 90%; max-width: 500px; display: block; }
 #btn-ocr:active { opacity: 0.7; }
 #btn-ocr:disabled { background: #444; color: #888; cursor: not-allowed; }
@@ -49,10 +40,9 @@ h1 { font-size: 1.8rem; margin: 16px 0 8px; color: #00e676; text-transform: uppe
 #stats-content td { padding: 4px 6px; border-bottom: 1px solid #2a2f3b; }
 #btn-reset { margin-top: 16px; padding: 8px 20px; background: #3d0000; color: #ff5252; border: 1px solid #ff5252; border-radius: 8px; cursor: pointer; font-size: 0.8rem; }
 #btn-reset:hover { background: #5a0000; }
-#debug-img { width: 100%; max-width: 500px; margin: 4px auto; border-radius: 8px; display: none; background: #000; }
 #btn-torcia { padding: 8px 20px; background: #1a1f2b; color: #ffd740; border: 1px solid #ffd740; border-radius: 8px; cursor: pointer; font-size: 0.9rem; margin: 4px auto; display: none; }
 #btn-torcia.on { background: #ffd740; color: #000; }
-#btn-torcia:hover { opacity: 0.8; }
+#btn-cambia-camera { padding: 6px 14px; background: transparent; color: #888; border: 1px solid #444; border-radius: 20px; cursor: pointer; font-size: 0.8rem; display: none; }
 #manual-area { width: 100%; max-width: 500px; text-align: center; margin: 4px 0; }
 #toggle-manuale { color: #888; font-size: 0.8rem; cursor: pointer; text-decoration: none; }
 #toggle-manuale:hover { color: #00e676; }
@@ -61,20 +51,27 @@ h1 { font-size: 1.8rem; margin: 16px 0 8px; color: #00e676; text-transform: uppe
 #cf-input:focus { outline: none; border-color: #00e676; }
 #btn-manuale { padding: 10px 16px; background: #00e676; color: #000; border: none; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; }
 #btn-manuale:active { opacity: 0.7; }
+#debug-img { width: 100%; max-width: 500px; margin: 4px auto; border-radius: 8px; display: none; background: #000; }
 </style>
 </head>
 <body>
 
-<h1>&#x23F3; PRESENZE <span style="font-size:0.7rem;color:#888;letter-spacing:0">v3.4</span></h1>
+<h1>&#x23F3; PRESENZE <span style="font-size:0.7rem;color:#888;letter-spacing:0">v3.5</span></h1>
 <div id="counter"></div>
-<div id="reader">
-<canvas id="canvas-scan" style="display:none"></canvas>
+
+<div id="cam-container">
+  <video id="camera" autoplay playsinline></video>
+  <div id="crop-guide"></div>
 </div>
-<button id="btn-torcia" style="display:none">&#x1F4A1; Torcia</button>
-<button id="btn-cambia-camera" style="display:none">&#x1F4F1; Frontale</button>
+
+<button id="btn-torcia">&#x1F4A1; Torcia</button>
+<button id="btn-cambia-camera">&#x1F4F1; Frontale</button>
 <button id="btn-ocr">&#x1F50D; Leggi CF dalla tessera</button>
+
 <div id="status">In attesa di una tessera...</div>
+<canvas id="snapshot" style="display:none"></canvas>
 <canvas id="debug-img"></canvas>
+
 <div id="manual-area">
   <a id="toggle-manuale" href="#">Inserisci CF manualmente</a>
   <div id="manual-input" style="display:none">
@@ -82,24 +79,27 @@ h1 { font-size: 1.8rem; margin: 16px 0 8px; color: #00e676; text-transform: uppe
     <button id="btn-manuale">Timbra</button>
   </div>
 </div>
+
 <div id="oggi"></div>
+
 <details id="stats">
 <summary>&#x1F4CB; Archivio timbrature</summary>
 <div id="stats-content"></div>
 </details>
+
 <button id="btn-reset" style="display:none">&#x1F5D1; Reset dati</button>
 
 <script>
 const CF_STORAGE_KEY = 'timbra_cd_dati';
-const VERSION = 'v3.3';
+const VERSION = 'v3.5';
 
-let lastCf = '';
-let cameraStarted = false;
-let html5QrCode = null;
-let scanCanvas = null;
-let cameraFacing = 'user';
-let tessWorker = null;
-let workerReady = false;
+var lastCf = '';
+var videoStream = null;
+var cameraFacing = 'user';
+var cameraStarted = false;
+var torciaAccesa = false;
+var tessWorker = null;
+var workerReady = false;
 
 async function initTesseract() {
     try {
@@ -116,7 +116,6 @@ async function initTesseract() {
         console.log('Tesseract worker ready');
     } catch (e) {
         console.error('Tesseract init error:', e);
-        workerReady = false;
     }
 }
 
@@ -130,44 +129,43 @@ function salvaDati(dati) {
 }
 
 function oggiStr() {
-    const d = new Date();
+    var d = new Date();
     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
 
 function meseStr() {
-    const d = new Date();
+    var d = new Date();
     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
 }
 
 function oraStr() {
-    const d = new Date();
+    var d = new Date();
     return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') + ':' + String(d.getSeconds()).padStart(2, '0');
 }
 
 function tipoTimbratura(dati, cf, giorno) {
-    const timbrature = dati[cf]?.[meseStr()]?.[giorno] || [];
-    const count = timbrature.length;
+    var timbrature = dati[cf]?.[meseStr()]?.[giorno] || [];
+    var count = timbrature.length;
     if (count >= 6) return null;
     return count % 2 === 0 ? 'ENTRATA' : 'USCITA';
 }
 
 function registraTimbratura(cf) {
-    const dati = getDati();
-    const giorno = oggiStr();
-    const mese = meseStr();
-    const ora = oraStr();
+    var dati = getDati();
+    var giorno = oggiStr();
+    var mese = meseStr();
 
     if (!dati[cf]) dati[cf] = {};
     if (!dati[cf][mese]) dati[cf][mese] = {};
     if (!dati[cf][mese][giorno]) dati[cf][mese][giorno] = [];
 
-    const tipo = tipoTimbratura(dati, cf, giorno);
+    var tipo = tipoTimbratura(dati, cf, giorno);
     if (tipo === null) {
         mostraStatus('Limite 6 timbrature raggiunto per oggi!', 'err');
         return;
     }
 
-    dati[cf][mese][giorno].push({ ora, tipo });
+    dati[cf][mese][giorno].push({ ora: oraStr(), tipo: tipo });
     salvaDati(dati);
     mostraStatus('TIMBRATO !!!', 'ok');
     aggiornaOggi(cf);
@@ -175,17 +173,16 @@ function registraTimbratura(cf) {
 }
 
 function mostraStatus(msg, tipo) {
-    const el = document.getElementById('status');
+    var el = document.getElementById('status');
     el.textContent = msg;
     el.className = tipo || '';
 }
 
 function aggiornaCounter(cf) {
-    const dati = getDati();
-    const giorno = oggiStr();
-    const timbrature = dati[cf]?.[meseStr()]?.[giorno] || [];
-    const prossimo = timbrature.length % 2 === 0 ? 'ENTRATA' : 'USCITA';
-    const rimanenti = 6 - timbrature.length;
+    var dati = getDati();
+    var timbrature = dati[cf]?.[meseStr()]?.[oggiStr()] || [];
+    var prossimo = timbrature.length % 2 === 0 ? 'ENTRATA' : 'USCITA';
+    var rimanenti = 6 - timbrature.length;
     document.getElementById('counter').textContent =
         (timbrature.length > 0 ? cf + ' - ' : '') +
         timbrature.length + '/6 timbrature oggi - Prossima: ' + prossimo +
@@ -193,43 +190,43 @@ function aggiornaCounter(cf) {
 }
 
 function aggiornaOggi(cf) {
-    const dati = getDati();
-    const giorno = oggiStr();
-    const mese = meseStr();
-    const el = document.getElementById('oggi');
-    const timbrature = dati[cf]?.[mese]?.[giorno] || [];
+    var dati = getDati();
+    var giorno = oggiStr();
+    var mese = meseStr();
+    var el = document.getElementById('oggi');
+    var timbrature = dati[cf]?.[mese]?.[giorno] || [];
 
     if (timbrature.length === 0) {
         el.innerHTML = '<h3>&#x1F4C5; Oggi</h3><div style="color:#666;text-align:center;padding:12px">Nessuna timbratura</div>';
         return;
     }
 
-    let html = '<h3>&#x1F4C5; Oggi - ' + cf + '</h3>';
-    timbrature.forEach((t, i) => {
-        const cls = t.tipo === 'ENTRATA' ? 'entrata' : 'uscita';
+    var html = '<h3>&#x1F4C5; Oggi - ' + cf + '</h3>';
+    timbrature.forEach(function(t, i) {
+        var cls = t.tipo === 'ENTRATA' ? 'entrata' : 'uscita';
         html += '<div class="' + cls + '"><span>' + (i + 1) + '. ' + t.tipo + '</span><span>' + t.ora + '</span></div>';
     });
     el.innerHTML = html;
 }
 
 function aggiornaArchivio() {
-    const dati = getDati();
-    const el = document.getElementById('stats-content');
-    const cfs = Object.keys(dati);
+    var dati = getDati();
+    var el = document.getElementById('stats-content');
+    var cfs = Object.keys(dati);
     if (cfs.length === 0) {
         el.innerHTML = '<div style="color:#666;text-align:center;padding:12px">Nessun dato</div>';
         return;
     }
 
-    let html = '';
-    cfs.sort().forEach(cf => {
+    var html = '';
+    cfs.sort().forEach(function(cf) {
         html += '<h4 style="color:#00e676;margin:12px 0 4px">' + cf + '</h4>';
         html += '<table><tr><th>Giorno</th><th>Ora</th><th>Tipo</th></tr>';
-        const mesi = Object.keys(dati[cf]).sort().reverse();
-        mesi.forEach(mese => {
-            const giorni = Object.keys(dati[cf][mese]).sort().reverse();
-            giorni.forEach(g => {
-                dati[cf][mese][g].forEach(t => {
+        var mesi = Object.keys(dati[cf]).sort().reverse();
+        mesi.forEach(function(mese) {
+            var giorni = Object.keys(dati[cf][mese]).sort().reverse();
+            giorni.forEach(function(g) {
+                dati[cf][mese][g].forEach(function(t) {
                     html += '<tr><td>' + g.slice(5) + '</td><td>' + t.ora + '</td><td>' + t.tipo + '</td></tr>';
                 });
             });
@@ -259,60 +256,123 @@ function validaCF(cf) {
     return cf[15] === atteso;
 }
 
-function onScanSuccess(decodedText) {
-    const cf = decodedText.toUpperCase().trim();
-    if (!cf || cf === lastCf) return;
-
-    if (!validaCF(cf)) {
-        mostraStatus('Codice non valido, riprova', 'err');
-        setTimeout(() => {
-            mostraStatus('In attesa di una tessera...', '');
-        }, 2000);
-        return;
-    }
-
-    const dati = getDati();
-    const giorno = oggiStr();
-    const tipo = tipoTimbratura(dati, cf, giorno);
-    if (tipo === null) {
-        mostraStatus('Limite 6 timbrature raggiunto per ' + cf, 'err');
-        return;
-    }
-
-    lastCf = cf;
-    registraTimbratura(cf);
-    aggiornaArchivio();
-
-    setTimeout(() => { lastCf = ''; }, 2000);
-}
-
 function avviaCamera() {
     if (cameraStarted) return;
-    scanCanvas = document.getElementById('canvas-scan');
-
-    html5QrCode = new Html5Qrcode("reader");
-    html5QrCode.start(
-        { facingMode: cameraFacing },
-        { fps: 20, qrbox: { width: 250, height: 250 } },
-        onScanSuccess,
-        function() {}
-    ).then(function() {
+    navigator.mediaDevices.getUserMedia({
+        video: { facingMode: cameraFacing, width: { ideal: 1280 }, height: { ideal: 720 } }
+    }).then(function(stream) {
+        videoStream = stream;
+        var video = document.getElementById('camera');
+        video.srcObject = stream;
         cameraStarted = true;
-        mostraStatus('In attesa di una tessera...', '');
         document.getElementById('btn-torcia').style.display = '';
         document.getElementById('btn-cambia-camera').style.display = '';
+        mostraStatus('In attesa di una tessera...', '');
     }).catch(function(err) {
         mostraStatus('Errore fotocamera: ' + err, 'err');
     });
 }
 
 function fermaCamera() {
-    if (html5QrCode) {
-        try { html5QrCode.stop(); } catch (e) {}
-        html5QrCode = null;
+    if (videoStream) {
+        videoStream.getTracks().forEach(function(t) { t.stop(); });
+        videoStream = null;
     }
     cameraStarted = false;
+    document.getElementById('btn-torcia').style.display = 'none';
 }
+
+function getVideoTrack() {
+    if (!videoStream) return null;
+    var tracks = videoStream.getVideoTracks();
+    return tracks.length > 0 ? tracks[0] : null;
+}
+
+document.getElementById('btn-ocr').addEventListener('click', function() {
+    if (!cameraStarted) { mostraStatus('Attendi fotocamera', 'err'); return; }
+    var video = document.getElementById('camera');
+    if (video.readyState < 2) { mostraStatus('Attendi fotocamera', 'err'); return; }
+    if (!workerReady) { mostraStatus('OCR non pronto, riprova', 'err'); return; }
+
+    var vw = video.videoWidth, vh = video.videoHeight;
+    var snapshot = document.getElementById('snapshot');
+    snapshot.width = vw; snapshot.height = vh;
+    var ctx = snapshot.getContext('2d');
+    ctx.drawImage(video, 0, 0, vw, vh);
+
+    var cropW = Math.round(vw * 0.8);
+    var cropH = Math.round(vh * 0.3);
+    var cropX = Math.round((vw - cropW) / 2);
+    var cropY = Math.round((vh - cropH) / 2);
+
+    var procCanvas = document.createElement('canvas');
+    var sf = 2;
+    procCanvas.width = cropW * sf; procCanvas.height = cropH * sf;
+    var pctx = procCanvas.getContext('2d');
+    pctx.drawImage(snapshot, cropX, cropY, cropW, cropH, 0, 0, procCanvas.width, procCanvas.height);
+
+    var imgData = pctx.getImageData(0, 0, procCanvas.width, procCanvas.height);
+    var d = imgData.data;
+    for (var i = 0; i < d.length; i += 4) {
+        var g = 0.299 * d[i] + 0.587 * d[i+1] + 0.114 * d[i+2];
+        d[i] = d[i+1] = d[i+2] = g;
+    }
+    pctx.putImageData(imgData, 0, 0);
+
+    var debugEl = document.getElementById('debug-img');
+    debugEl.width = procCanvas.width; debugEl.height = procCanvas.height;
+    debugEl.getContext('2d').drawImage(procCanvas, 0, 0);
+
+    mostraStatus('OCR in corso...', '');
+    tessWorker.recognize(procCanvas).then(function(res) {
+        var testo = res.data.text.replace(/\s/g, '').toUpperCase();
+        var parole = res.data.text.replace(/\s+/g, ' ').trim();
+        var match16 = testo.match(/[A-Z0-9]{16,}/);
+
+        if (match16) {
+            var candidato = match16[0].substr(0, 16);
+            mostraStatus('Rilevato: ' + candidato, '');
+            setTimeout(function() {
+                if (candidato === lastCf) { mostraStatus('Gia timbrato', 'err'); setTimeout(function(){mostraStatus('In attesa','');},1500); return; }
+                lastCf = candidato;
+                var dati = getDati();
+                var giorno = oggiStr();
+                var tipo = tipoTimbratura(dati, candidato, giorno);
+                if (tipo === null) { mostraStatus('Limite 6 per ' + candidato, 'err'); return; }
+                registraTimbratura(candidato);
+                aggiornaArchivio();
+                setTimeout(function() { lastCf = ''; }, 2000);
+            }, 1200);
+        } else {
+            mostraStatus('Nessun CF: "' + parole.substr(0, 40) + '"', 'err');
+            setTimeout(function() { mostraStatus('In attesa di una tessera...', ''); }, 3000);
+        }
+    }).catch(function(err) {
+        mostraStatus('Errore OCR: ' + err, 'err');
+        setTimeout(function() { mostraStatus('In attesa di una tessera...', ''); }, 2000);
+    });
+});
+
+document.getElementById('btn-torcia').addEventListener('click', function() {
+    var track = getVideoTrack();
+    if (!track) return;
+    torciaAccesa = !torciaAccesa;
+    track.applyConstraints({ advanced: [{ torch: torciaAccesa }] }).then(function() {
+        document.getElementById('btn-torcia').classList.toggle('on', torciaAccesa);
+        document.getElementById('btn-torcia').textContent = torciaAccesa ? '\u2600 Torcia' : '\uD83D\uDCA1 Torcia';
+    }).catch(function() {
+        torciaAccesa = false;
+        mostraStatus('Torcia non disponibile', 'err');
+        setTimeout(function() { mostraStatus('In attesa di una tessera...', ''); }, 1500);
+    });
+});
+
+document.getElementById('btn-cambia-camera').addEventListener('click', function() {
+    cameraFacing = cameraFacing === 'user' ? 'environment' : 'user';
+    this.textContent = cameraFacing === 'user' ? '\uD83D\uDCF1 Frontale' : '\uD83D\uDCF1 Posteriore';
+    fermaCamera();
+    avviaCamera();
+});
 
 document.getElementById('stats').addEventListener('toggle', function() {
     var content = document.getElementById('stats-content');
@@ -358,81 +418,6 @@ document.getElementById('cf-input').addEventListener('keydown', function(e) {
     if (e.key === 'Enter') document.getElementById('btn-manuale').click();
 });
 
-document.getElementById('btn-ocr').addEventListener('click', function() {
-    if (!cameraStarted) { mostraStatus('Attendi fotocamera', 'err'); return; }
-    var vid = document.querySelector('#reader video');
-    if (!vid || vid.readyState < 2) { mostraStatus('Attendi fotocamera', 'err'); return; }
-    if (!workerReady) { mostraStatus('OCR non pronto, riprova', 'err'); return; }
-
-    var w = vid.videoWidth, h = vid.videoHeight;
-    scanCanvas.width = w; scanCanvas.height = h;
-    var ctx = scanCanvas.getContext('2d');
-    ctx.drawImage(vid, 0, 0, w, h);
-
-    var cropX = Math.round(w * 0.15), cropY = Math.round(h * 0.15);
-    var cropW = Math.round(w * 0.7),  cropH = Math.round(h * 0.7);
-    var sf = 3;
-    var procCanvas = document.createElement('canvas');
-    procCanvas.width = cropW * sf; procCanvas.height = cropH * sf;
-    var pctx = procCanvas.getContext('2d');
-    pctx.drawImage(scanCanvas, cropX, cropY, cropW, cropH, 0, 0, procCanvas.width, procCanvas.height);
-
-    var imgData = pctx.getImageData(0, 0, procCanvas.width, procCanvas.height);
-    var d = imgData.data;
-    for (var i = 0; i < d.length; i += 4) {
-        var g = 0.299 * d[i] + 0.587 * d[i+1] + 0.114 * d[i+2];
-        d[i] = d[i+1] = d[i+2] = g;
-    }
-    pctx.putImageData(imgData, 0, 0);
-
-    var debugEl = document.getElementById('debug-img');
-    debugEl.width = procCanvas.width; debugEl.height = procCanvas.height;
-    debugEl.getContext('2d').drawImage(procCanvas, 0, 0);
-
-    mostraStatus('OCR in corso...', '');
-    tessWorker.recognize(procCanvas).then(function(res) {
-        var testo = res.data.text.replace(/\s/g, '').toUpperCase();
-        var parole = res.data.text.replace(/\s+/g, ' ').trim();
-        var match16 = testo.match(/[A-Z0-9]{16,}/);
-
-        if (match16) {
-            var candidato = match16[0].substr(0, 16);
-            mostraStatus('Rilevato: ' + candidato, '');
-            setTimeout(function() {
-                if (candidato === lastCf) { mostraStatus('Gia timbrato', 'err'); setTimeout(function(){mostraStatus('In attesa','');},1500); return; }
-                lastCf = candidato;
-                var dati = getDati();
-                var giorno = oggiStr();
-                var tipo = tipoTimbratura(dati, candidato, giorno);
-                if (tipo === null) { mostraStatus('Limite 6 per ' + candidato, 'err'); return; }
-                registraTimbratura(candidato);
-                aggiornaArchivio();
-                setTimeout(function() { lastCf = ''; }, 2000);
-            }, 1200);
-        } else {
-            mostraStatus('Nessun CF: "' + parole.substr(0, 40) + '"', 'err');
-            setTimeout(function() { mostraStatus('In attesa di una tessera...', ''); }, 3000);
-        }
-    }).catch(function(err) {
-        mostraStatus('Errore OCR: ' + err, 'err');
-        setTimeout(function() { mostraStatus('In attesa di una tessera...', ''); }, 2000);
-    });
-});
-
-var torciaAccesa = false;
-document.getElementById('btn-torcia').addEventListener('click', function() {
-    if (!html5QrCode) return;
-    torciaAccesa = !torciaAccesa;
-    html5QrCode.applyVideoConstraints({ advanced: [{ torch: torciaAccesa }] }).then(function() {
-        document.getElementById('btn-torcia').classList.toggle('on', torciaAccesa);
-        document.getElementById('btn-torcia').textContent = torciaAccesa ? '\u2600 Torcia' : '\uD83D\uDCA1 Torcia';
-    }).catch(function() {
-        torciaAccesa = false;
-        mostraStatus('Torcia non disponibile', 'err');
-        setTimeout(function() { mostraStatus('In attesa di una tessera...', ''); }, 1500);
-    });
-});
-
 window.addEventListener('load', function() {
     var dati = getDati();
     if (Object.keys(dati).length > 0) {
@@ -443,13 +428,6 @@ window.addEventListener('load', function() {
     }
     avviaCamera();
     initTesseract();
-    document.getElementById('btn-cambia-camera').addEventListener('click', function() {
-        if (!html5QrCode) return;
-        cameraFacing = cameraFacing === 'user' ? 'environment' : 'user';
-        this.textContent = cameraFacing === 'user' ? '\uD83D\uDCF1 Frontale' : '\uD83D\uDCF1 Posteriore';
-        fermaCamera();
-        avviaCamera();
-    });
 });
 
 window.addEventListener('beforeunload', function() {
