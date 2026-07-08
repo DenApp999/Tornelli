@@ -237,11 +237,7 @@ function avviaCamera() {
         Html5QrcodeSupportedFormats.CODE_128,
         Html5QrcodeSupportedFormats.CODE_39
     ];
-    var constraints = {
-        facingMode: "user",
-        aspectRatio: { ideal: 4/3 },
-        width: { min: 640, ideal: 1280 }
-    };
+    var constraints = { facingMode: "user" };
     html5QrCode.start(
         constraints,
         { fps: 20, qrbox: function(viewfinderWidth, viewfinderHeight) {
