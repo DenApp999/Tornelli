@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>PRESENZE v2.3</title>
+<title>PRESENZE v3.0</title>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -23,6 +23,10 @@ h1 { font-size: 1.8rem; margin: 16px 0 8px; color: #00e676; text-transform: uppe
 #btn-cattura { padding: 12px 24px; background: #00e676; color: #000; border: none; border-radius: 50px; font-size: 1.1rem; font-weight: bold; cursor: pointer; margin: 4px auto; width: 90%; max-width: 500px; }
 #btn-cattura:active { opacity: 0.7; }
 #btn-cattura:disabled { background: #333; color: #666; cursor: not-allowed; }
+#btn-cambia-camera { padding: 6px 14px; background: transparent; color: #888; border: 1px solid #444; border-radius: 20px; cursor: pointer; font-size: 0.8rem; }
+#btn-ocr { padding: 14px 24px; background: #ffd740; color: #000; border: none; border-radius: 50px; font-size: 1.1rem; font-weight: bold; cursor: pointer; margin: 6px auto; width: 90%; max-width: 500px; display: block; }
+#btn-ocr:active { opacity: 0.7; }
+#btn-ocr:disabled { background: #444; color: #888; cursor: not-allowed; }
 #status { font-size: 1.5rem; font-weight: bold; text-align: center; min-height: 60px; display: flex; align-items: center; justify-content: center; width: 100%; max-width: 500px; border-radius: 12px; margin: 8px auto; padding: 12px; transition: all 0.3s; background: #1a1f2b; color: #888; }
 #status.ok { background: #003d1a; color: #00e676; font-size: 2rem; animation: flash 0.6s ease; }
 #status.err { background: #3d0000; color: #ff5252; }
@@ -59,19 +63,17 @@ h1 { font-size: 1.8rem; margin: 16px 0 8px; color: #00e676; text-transform: uppe
 </head>
 <body>
 
-<h1>&#x23F3; PRESENZE <span style="font-size:0.7rem;color:#888;letter-spacing:0">v2.3</span></h1>
+<h1>&#x23F3; PRESENZE <span style="font-size:0.7rem;color:#888;letter-spacing:0">v3.0</span></h1>
 <div id="counter"></div>
 <div id="reader">
-<div id="freeze-overlay" style="display:none"><div>Analizzo...</div></div>
 <canvas id="canvas-scan" style="display:none"></canvas>
 </div>
-<button id="btn-cattura">&#x1F4F7; Cattura e analizza</button>
 <button id="btn-torcia" style="display:none">&#x1F4A1; Torcia</button>
+<button id="btn-cambia-camera" style="display:none">&#x1F4F1; Frontale</button>
+<button id="btn-ocr">&#x1F50D; Leggi CF dalla tessera</button>
 <div id="status">In attesa di una tessera...</div>
 <div id="manual-area">
   <a id="toggle-manuale" href="#">Inserisci CF manualmente</a>
-  <span style="color:#444"> | </span>
-  <a id="btn-ocr" href="#" style="color:#ffd740">Leggi testo tessera</a>
   <div id="manual-input" style="display:none">
     <input type="text" id="cf-input" maxlength="16" placeholder="Codice Fiscale" autocomplete="off">
     <button id="btn-manuale">Timbra</button>
@@ -86,12 +88,13 @@ h1 { font-size: 1.8rem; margin: 16px 0 8px; color: #00e676; text-transform: uppe
 
 <script>
 const CF_STORAGE_KEY = 'timbra_cd_dati';
-const VERSION = 'v2.3';
+const VERSION = 'v3.0';
 
 let lastCf = '';
 let cameraStarted = false;
 let html5QrCode = null;
 let scanCanvas = null;
+let cameraFacing = 'user';
 
 function getDati() {
     try { return JSON.parse(localStorage.getItem(CF_STORAGE_KEY)) || {}; }
@@ -265,22 +268,15 @@ function avviaCamera() {
 
     html5QrCode = new Html5Qrcode("reader");
     html5QrCode.start(
-        { facingMode: "user" },
-        { fps: 15, qrbox: { width: 300, height: 200 }, formatsToSupport: [
-            Html5QrcodeSupportedFormats.CODE_128,
-            Html5QrcodeSupportedFormats.CODE_39,
-            Html5QrcodeSupportedFormats.ITF,
-            Html5QrcodeSupportedFormats.CODE_93,
-            Html5QrcodeSupportedFormats.EAN_13,
-            Html5QrcodeSupportedFormats.CODABAR,
-            Html5QrcodeSupportedFormats.QR_CODE
-        ] },
+        { facingMode: cameraFacing },
+        { fps: 20, qrbox: { width: 250, height: 250 } },
         onScanSuccess,
         function() {}
     ).then(function() {
         cameraStarted = true;
         mostraStatus('In attesa di una tessera...', '');
         document.getElementById('btn-torcia').style.display = '';
+        document.getElementById('btn-cambia-camera').style.display = '';
     }).catch(function(err) {
         mostraStatus('Errore fotocamera: ' + err, 'err');
     });
@@ -339,18 +335,11 @@ document.getElementById('cf-input').addEventListener('keydown', function(e) {
 });
 
 var tesseractLoaded = false;
-document.getElementById('btn-ocr').addEventListener('click', function(e) {
-    e.preventDefault();
-    if (!cameraStarted) {
-        mostraStatus('Attendi l avvio della fotocamera', 'err');
-        return;
-    }
+document.getElementById('btn-ocr').addEventListener('click', function() {
+    if (!cameraStarted) { mostraStatus('Attendi l avvio della fotocamera', 'err'); return; }
     var vid = document.querySelector('#reader video');
-    if (!vid || vid.readyState < 2) {
-        mostraStatus('Attendi l avvio della fotocamera', 'err');
-        return;
-    }
-    mostraStatus('Leggo il testo... attendi', '');
+    if (!vid || vid.readyState < 2) { mostraStatus('Attendi l avvio della fotocamera', 'err'); return; }
+
     var w = vid.videoWidth, h = vid.videoHeight;
     scanCanvas.width = w; scanCanvas.height = h;
     var ctx = scanCanvas.getContext('2d');
@@ -359,169 +348,52 @@ document.getElementById('btn-ocr').addEventListener('click', function(e) {
     var data = imageData.data;
     for (var i = 0; i < data.length; i += 4) {
         var gray = 0.299 * data[i] + 0.587 * data[i+1] + 0.114 * data[i+2];
-        var bw = gray > 128 ? 255 : 0;
+        var bw = gray > 140 ? 255 : 0;
         data[i] = data[i+1] = data[i+2] = bw;
     }
     ctx.putImageData(imageData, 0, 0);
     var imgData = scanCanvas.toDataURL('image/png');
 
-    function eseguiOCR() {
-        Tesseract.recognize(
-            imgData,
-            'ita',
-            { logger: function(m) { if (m.status === 'recognizing text') mostraStatus('OCR: ' + Math.round(m.progress * 100) + '%', ''); } }
-        ).then(function(res) {
+    function elabora() {
+        mostraStatus('OCR in corso... attendi', '');
+        Tesseract.recognize(imgData, 'ita', {
+            logger: function(m) {
+                if (m.status === 'recognizing text') mostraStatus('OCR: ' + Math.round(m.progress * 100) + '%', '');
+            }
+        }).then(function(res) {
             var testo = res.data.text.toUpperCase();
             var match = testo.match(/[A-Z]{6}\d{2}[A-Z]\d{2}[A-Z]\d{3}[A-Z]/);
             if (match && validaCF(match[0])) {
                 var cf = match[0];
-                var dati = getDati();
-                var giorno = oggiStr();
-                var tipo = tipoTimbratura(dati, cf, giorno);
-                if (tipo === null) {
-                    mostraStatus('Limite 6 timbrature raggiunto per ' + cf, 'err');
-                    return;
-                }
-                registraTimbratura(cf);
-                aggiornaArchivio();
-            } else {
-                mostraStatus('Testo non riconosciuto, riprova', 'err');
-                setTimeout(function() { mostraStatus('In attesa di una tessera...', ''); }, 2000);
-            }
-        }).catch(function(err) {
-            mostraStatus('Errore OCR: ' + err, 'err');
-        });
-    }
-
-    if (tesseractLoaded) {
-        eseguiOCR();
-    } else {
-        mostraStatus('Carico motore OCR...', '');
-        var s = document.createElement('script');
-        s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
-        s.onload = function() {
-            tesseractLoaded = true;
-            eseguiOCR();
-        };
-        s.onerror = function() {
-            mostraStatus('Errore caricamento OCR', 'err');
-        };
-        document.head.appendChild(s);
-    }
-});
-
-function catturaEAnalizza() {
-    if (!cameraStarted) {
-        mostraStatus('Attendi l avvio della fotocamera', 'err');
-        return;
-    }
-    var vid = document.querySelector('#reader video');
-    if (!vid || vid.readyState < 2) {
-        mostraStatus('Attendi l avvio della fotocamera', 'err');
-        return;
-    }
-
-    document.getElementById('freeze-overlay').style.display = 'flex';
-    var w = vid.videoWidth, h = vid.videoHeight;
-    scanCanvas.width = w; scanCanvas.height = h;
-    var ctx = scanCanvas.getContext('2d');
-    ctx.drawImage(vid, 0, 0, w, h);
-
-    var prew = document.createElement('canvas');
-    prew.width = w; prew.height = h;
-    var pctx = prew.getContext('2d');
-    pctx.drawImage(vid, 0, 0, w, h);
-    var imgData = pctx.getImageData(0, 0, w, h);
-    var data = imgData.data;
-    for (var i = 0; i < data.length; i += 4) {
-        var gray = 0.299 * data[i] + 0.587 * data[i+1] + 0.114 * data[i+2];
-        var bw = gray > 128 ? 255 : 0;
-        data[i] = data[i+1] = data[i+2] = bw;
-    }
-    pctx.putImageData(imgData, 0, 0);
-    var bwDataUrl = prew.toDataURL('image/png');
-
-    function resume() {
-        document.getElementById('freeze-overlay').style.display = 'none';
-    }
-
-    if ('BarcodeDetector' in window) {
-        var detect = new BarcodeDetector({ formats: ['code_128', 'code_39', 'itf', 'code_93', 'codabar', 'ean_13', 'qr_code'] });
-        detect.detect(scanCanvas).then(function(barcodes) {
-            if (barcodes.length > 0) {
-                var cf = barcodes[0].rawValue.toUpperCase().trim();
-                if (validaCF(cf) && cf !== lastCf) {
-                    lastCf = cf;
-                    var dati = getDati();
-                    var giorno = oggiStr();
-                    var tipo = tipoTimbratura(dati, cf, giorno);
-                    if (tipo !== null) {
-                        registraTimbratura(cf);
-                        aggiornaArchivio();
-                        resume();
-                        setTimeout(function() { lastCf = ''; }, 2000);
-                        return;
-                    }
-                }
-            }
-            tentativoOCR(bwDataUrl, resume);
-        }).catch(function() {
-            tentativoOCR(bwDataUrl, resume);
-        });
-    } else {
-        tentativoOCR(bwDataUrl, resume);
-    }
-}
-
-function tentativoOCR(imgData, callback) {
-    mostraStatus('OCR in corso...', '');
-
-    function esegui() {
-        Tesseract.recognize(
-            imgData,
-            'ita',
-            { logger: function(m) { if (m.status === 'recognizing text') mostraStatus('OCR: ' + Math.round(m.progress * 100) + '%', ''); } }
-        ).then(function(res) {
-            var testo = res.data.text.toUpperCase();
-            var match = testo.match(/[A-Z]{6}\d{2}[A-Z]\d{2}[A-Z]\d{3}[A-Z]/);
-            if (match && validaCF(match[0])) {
-                var cf = match[0];
-                if (cf === lastCf) { callback(); return; }
+                if (cf === lastCf) { mostraStatus('Gia timbrato', 'err'); setTimeout(function(){mostraStatus('In attesa di una tessera...','');},1500); return; }
                 lastCf = cf;
                 var dati = getDati();
                 var giorno = oggiStr();
                 var tipo = tipoTimbratura(dati, cf, giorno);
-                if (tipo !== null) {
-                    registraTimbratura(cf);
-                    aggiornaArchivio();
-                    setTimeout(function() { lastCf = ''; }, 2000);
-                } else {
-                    mostraStatus('Limite timbrature per ' + cf, 'err');
-                }
+                if (tipo === null) { mostraStatus('Limite 6 timbrature per ' + cf, 'err'); return; }
+                registraTimbratura(cf);
+                aggiornaArchivio();
+                setTimeout(function() { lastCf = ''; }, 2000);
             } else {
-                mostraStatus('Non riconosciuto, riprova', 'err');
-                setTimeout(function() { mostraStatus('In attesa di una tessera...', ''); }, 2000);
+                mostraStatus('CF non trovato, riprova', 'err');
+                setTimeout(function() { mostraStatus('In attesa di una tessera...', ''); }, 2500);
             }
-            callback();
         }).catch(function(err) {
-            mostraStatus('Errore OCR', 'err');
-            setTimeout(function() { mostraStatus('In attesa di una tessera...', ''); }, 1500);
-            callback();
+            mostraStatus('Errore OCR: ' + err, 'err');
+            setTimeout(function() { mostraStatus('In attesa di una tessera...', ''); }, 2000);
         });
     }
 
-    if (tesseractLoaded) { esegui(); }
+    if (tesseractLoaded) { elabora(); }
     else {
-        mostraStatus('Carico OCR...', '');
+        mostraStatus('Carico OCR (prima volta)...', '');
         var s = document.createElement('script');
         s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
-        s.onload = function() { tesseractLoaded = true; esegui(); };
-        s.onerror = function() { mostraStatus('Errore OCR', 'err'); callback(); };
+        s.onload = function() { tesseractLoaded = true; elabora(); };
+        s.onerror = function() { mostraStatus('Errore caricamento OCR, riprova', 'err'); };
         document.head.appendChild(s);
     }
-}
-
-document.getElementById('btn-cattura').addEventListener('click', catturaEAnalizza);
+});
 
 var torciaAccesa = false;
 document.getElementById('btn-torcia').addEventListener('click', function() {
@@ -546,6 +418,13 @@ window.addEventListener('load', function() {
         aggiornaCounter(cfs[0]);
     }
     avviaCamera();
+    document.getElementById('btn-cambia-camera').addEventListener('click', function() {
+        if (!html5QrCode) return;
+        cameraFacing = cameraFacing === 'user' ? 'environment' : 'user';
+        this.textContent = cameraFacing === 'user' ? '\uD83D\uDCF1 Frontale' : '\uD83D\uDCF1 Posteriore';
+        fermaCamera();
+        avviaCamera();
+    });
 });
 
 window.addEventListener('beforeunload', function() {
