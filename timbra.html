@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>PRESENZE v1.2</title>
+<title>PRESENZE v1.3</title>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -33,13 +33,19 @@ h1 { font-size: 1.8rem; margin: 16px 0 8px; color: #00e676; text-transform: uppe
 #stats-content td { padding: 4px 6px; border-bottom: 1px solid #2a2f3b; }
 #btn-reset { margin-top: 16px; padding: 8px 20px; background: #3d0000; color: #ff5252; border: 1px solid #ff5252; border-radius: 8px; cursor: pointer; font-size: 0.8rem; }
 #btn-reset:hover { background: #5a0000; }
+#btn-torcia { padding: 8px 20px; background: #1a1f2b; color: #ffd740; border: 1px solid #ffd740; border-radius: 8px; cursor: pointer; font-size: 0.9rem; margin: 4px auto; display: none; }
+#btn-torcia.on { background: #ffd740; color: #000; }
+#btn-torcia:hover { opacity: 0.8; }
+#reader__scan_region { min-height: 250px; }
+#reader video { width: 100%; }
 </style>
 </head>
 <body>
 
-<h1>&#x23F3; PRESENZE <span style="font-size:0.7rem;color:#888;letter-spacing:0">v1.2</span></h1>
+<h1>&#x23F3; PRESENZE <span style="font-size:0.7rem;color:#888;letter-spacing:0">v1.3</span></h1>
 <div id="counter"></div>
 <div id="reader"></div>
+<button id="btn-torcia" style="display:none">&#x1F4A1; Torcia</button>
 <div id="status">In attesa di una tessera...</div>
 <div id="oggi"></div>
 <details id="stats">
@@ -228,27 +234,30 @@ function avviaCamera() {
 
     html5QrCode = new Html5Qrcode("reader");
     var formats = [
-        Html5QrcodeSupportedFormats.QR_CODE,
         Html5QrcodeSupportedFormats.CODE_128,
-        Html5QrcodeSupportedFormats.CODE_39,
-        Html5QrcodeSupportedFormats.CODE_93,
-        Html5QrcodeSupportedFormats.EAN_13,
-        Html5QrcodeSupportedFormats.EAN_8,
-        Html5QrcodeSupportedFormats.UPC_A,
-        Html5QrcodeSupportedFormats.UPC_E,
-        Html5QrcodeSupportedFormats.DATA_MATRIX,
-        Html5QrcodeSupportedFormats.PDF_417,
-        Html5QrcodeSupportedFormats.AZTEC
+        Html5QrcodeSupportedFormats.CODE_39
     ];
+    var constraints = {
+        facingMode: "user",
+        aspectRatio: { ideal: 4/3 },
+        width: { min: 640, ideal: 1280 }
+    };
     html5QrCode.start(
-        { facingMode: "user" },
-        { fps: 15, qrbox: { width: 300, height: 300 }, formatsToSupport: formats },
+        constraints,
+        { fps: 20, qrbox: function(viewfinderWidth, viewfinderHeight) {
+            return { width: viewfinderWidth * 0.85, height: viewfinderHeight * 0.4 };
+        }, formatsToSupport: formats },
         onScanSuccess,
-        () => {}
-    ).then(() => {
+        function() {}
+    ).then(function() {
         cameraStarted = true;
         mostraStatus('In attesa di una tessera...', '');
-    }).catch(err => {
+        var btnTorcia = document.getElementById('btn-torcia');
+        btnTorcia.style.display = '';
+        html5QrCode.getRunningTrackCameraCapabilities().then(function(caps) {
+            if (caps && caps.torchFeature()) btnTorcia.style.display = '';
+        }).catch(function() {});
+    }).catch(function(err) {
         console.error(err);
         mostraStatus('Errore fotocamera: ' + err, 'err');
         readerEl.innerHTML = '<div style="padding:40px;text-align:center;color:#ff5252">Errore fotocamera<br><small>' + err + '</small></div>';
@@ -266,6 +275,20 @@ document.getElementById('btn-reset').addEventListener('click', function() {
         localStorage.removeItem(CF_STORAGE_KEY);
         location.reload();
     }
+});
+
+var torciaAccesa = false;
+document.getElementById('btn-torcia').addEventListener('click', function() {
+    if (!html5QrCode) return;
+    torciaAccesa = !torciaAccesa;
+    html5QrCode.applyVideoConstraints({ advanced: [{ torch: torciaAccesa }] }).then(function() {
+        document.getElementById('btn-torcia').classList.toggle('on', torciaAccesa);
+        document.getElementById('btn-torcia').textContent = torciaAccesa ? '\u2600 Torcia' : '\uD83D\uDCA1 Torcia';
+    }).catch(function() {
+        torciaAccesa = false;
+        mostraStatus('Torcia non disponibile', 'err');
+        setTimeout(function() { mostraStatus('In attesa di una tessera...', ''); }, 1500);
+    });
 });
 
 window.addEventListener('load', () => {
