@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>PRESENZE v2.0</title>
+<title>PRESENZE v2.1</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Segoe UI', sans-serif; background: #0b0e14; color: #fff; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 16px; }
@@ -61,7 +61,7 @@ h1 { font-size: 1.8rem; margin: 16px 0 8px; color: #00e676; text-transform: uppe
 </head>
 <body>
 
-<h1>&#x23F3; PRESENZE <span style="font-size:0.7rem;color:#888;letter-spacing:0">v2.0</span></h1>
+<h1>&#x23F3; PRESENZE <span style="font-size:0.7rem;color:#888;letter-spacing:0">v2.1</span></h1>
 <div id="counter"></div>
 <div id="reader">
 <video id="video" autoplay playsinline muted style="display:none"></video>
@@ -97,7 +97,7 @@ h1 { font-size: 1.8rem; margin: 16px 0 8px; color: #00e676; text-transform: uppe
 
 <script>
 const CF_STORAGE_KEY = 'timbra_cd_dati';
-const VERSION = 'v2.0';
+const VERSION = 'v2.1';
 
 let stream = null;
 let lastCf = '';
@@ -299,9 +299,13 @@ function avviaCamera() {
             var cropW = w / zoom, cropH = h / zoom;
             var cx = (w - cropW) / 2, cy = (h - cropH) / 2;
 
+            scanCanvas.width = w; scanCanvas.height = h;
+            var sctx = scanCanvas.getContext('2d');
+            sctx.drawImage(videoEl, cx, cy, cropW, cropH, 0, 0, w, h);
+
             previewCanvas.width = w; previewCanvas.height = h;
             var pctx = previewCanvas.getContext('2d');
-            pctx.drawImage(videoEl, cx, cy, cropW, cropH, 0, 0, w, h);
+            pctx.drawImage(scanCanvas, 0, 0);
             var imageData = pctx.getImageData(0, 0, w, h);
             var data = imageData.data;
             for (var i = 0; i < data.length; i += 4) {
@@ -311,8 +315,6 @@ function avviaCamera() {
             }
             pctx.putImageData(imageData, 0, 0);
 
-            scanCanvas.width = w; scanCanvas.height = h;
-            scanCanvas.getContext('2d').drawImage(previewCanvas, 0, 0);
             renderTimer = requestAnimationFrame(renderFrame);
         }
         renderFrame();
@@ -499,7 +501,7 @@ function catturaEAnalizza() {
 }
 
 function tentativoOCR(callback) {
-    var imgData = scanCanvas.toDataURL('image/png');
+    var imgData = previewCanvas.toDataURL('image/png');
     mostraStatus('OCR in corso...', '');
 
     function esegui() {
