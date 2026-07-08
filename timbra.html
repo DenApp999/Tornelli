@@ -248,11 +248,7 @@ function avviaCamera() {
     ).then(function() {
         cameraStarted = true;
         mostraStatus('In attesa di una tessera...', '');
-        var btnTorcia = document.getElementById('btn-torcia');
-        btnTorcia.style.display = '';
-        html5QrCode.getRunningTrackCameraCapabilities().then(function(caps) {
-            if (caps && caps.torchFeature()) btnTorcia.style.display = '';
-        }).catch(function() {});
+        document.getElementById('btn-torcia').style.display = '';
     }).catch(function(err) {
         console.error(err);
         mostraStatus('Errore fotocamera: ' + err, 'err');
