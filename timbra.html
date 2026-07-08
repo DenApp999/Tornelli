@@ -3,14 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>PRESENZE v1.3</title>
-<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<title>PRESENZE v1.5</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Segoe UI', sans-serif; background: #0b0e14; color: #fff; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 16px; }
 h1 { font-size: 1.8rem; margin: 16px 0 8px; color: #00e676; text-transform: uppercase; letter-spacing: 2px; }
 #reader { width: 100%; max-width: 500px; margin: 12px auto; border-radius: 12px; overflow: hidden; background: #1a1f2b; }
-#reader video { border-radius: 12px; }
+#reader video { width: 100%; display: block; border-radius: 12px; }
 #reader__dashboard_silent, #reader__dashboard_spinner { display: none !important; }
 #status { font-size: 1.5rem; font-weight: bold; text-align: center; min-height: 60px; display: flex; align-items: center; justify-content: center; width: 100%; max-width: 500px; border-radius: 12px; margin: 8px auto; padding: 12px; transition: all 0.3s; background: #1a1f2b; color: #888; }
 #status.ok { background: #003d1a; color: #00e676; font-size: 2rem; animation: flash 0.6s ease; }
@@ -36,15 +35,17 @@ h1 { font-size: 1.8rem; margin: 16px 0 8px; color: #00e676; text-transform: uppe
 #btn-torcia { padding: 8px 20px; background: #1a1f2b; color: #ffd740; border: 1px solid #ffd740; border-radius: 8px; cursor: pointer; font-size: 0.9rem; margin: 4px auto; display: none; }
 #btn-torcia.on { background: #ffd740; color: #000; }
 #btn-torcia:hover { opacity: 0.8; }
-#reader__scan_region { min-height: 250px; }
-#reader video { width: 100%; }
 </style>
 </head>
 <body>
 
-<h1>&#x23F3; PRESENZE <span style="font-size:0.7rem;color:#888;letter-spacing:0">v1.3</span></h1>
+<h1>&#x23F3; PRESENZE <span style="font-size:0.7rem;color:#888;letter-spacing:0">v1.5</span></h1>
 <div id="counter"></div>
-<div id="reader"></div>
+<div id="reader">
+<video id="video" autoplay playsinline muted></video>
+<canvas id="canvas" style="display:none"></canvas>
+<div id="reader-fallback"></div>
+</div>
 <button id="btn-torcia" style="display:none">&#x1F4A1; Torcia</button>
 <div id="status">In attesa di una tessera...</div>
 <div id="oggi"></div>
@@ -56,10 +57,14 @@ h1 { font-size: 1.8rem; margin: 16px 0 8px; color: #00e676; text-transform: uppe
 
 <script>
 const CF_STORAGE_KEY = 'timbra_cd_dati';
+const VERSION = 'v1.5';
 
-let html5QrCode = null;
+let stream = null;
 let lastCf = '';
 let cameraStarted = false;
+let scanTimer = null;
+let videoEl = null;
+let canvasEl = null;
 
 function getDati() {
     try { return JSON.parse(localStorage.getItem(CF_STORAGE_KEY)) || {}; }
@@ -229,35 +234,60 @@ function onScanSuccess(decodedText) {
 
 function avviaCamera() {
     if (cameraStarted) return;
-    const readerEl = document.getElementById('reader');
-    readerEl.innerHTML = '';
+    videoEl = document.getElementById('video');
+    canvasEl = document.getElementById('canvas');
 
-    html5QrCode = new Html5Qrcode("reader");
-    var formats = [
-        Html5QrcodeSupportedFormats.CODE_128,
-        Html5QrcodeSupportedFormats.CODE_39
-    ];
-    var constraints = { facingMode: "user" };
-    html5QrCode.start(
-        constraints,
-        { fps: 20, qrbox: function(viewfinderWidth, viewfinderHeight) {
-            return { width: viewfinderWidth * 0.85, height: viewfinderHeight * 0.4 };
-        }, formatsToSupport: formats },
-        onScanSuccess,
-        function() {}
-    ).then(function() {
+    navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } }
+    }).then(function(s) {
+        stream = s;
+        videoEl.srcObject = stream;
         cameraStarted = true;
         mostraStatus('In attesa di una tessera...', '');
         document.getElementById('btn-torcia').style.display = '';
+        if ('BarcodeDetector' in window) {
+            var detector = new BarcodeDetector({ formats: ['code_128', 'code_39', 'qr_code'] });
+            scanTimer = setInterval(function() {
+                if (videoEl.readyState < 2) return;
+                var w = videoEl.videoWidth, h = videoEl.videoHeight;
+                if (w === 0) return;
+                canvasEl.width = w; canvasEl.height = h;
+                var ctx = canvasEl.getContext('2d');
+                ctx.drawImage(videoEl, 0, 0, w, h);
+                detector.detect(canvasEl).then(function(barcodes) {
+                    barcodes.forEach(function(b) { onScanSuccess(b.rawValue); });
+                }).catch(function(){});
+            }, 400);
+        } else {
+            caricaHtml5QrFallback();
+        }
     }).catch(function(err) {
-        console.error(err);
         mostraStatus('Errore fotocamera: ' + err, 'err');
-        readerEl.innerHTML = '<div style="padding:40px;text-align:center;color:#ff5252">Errore fotocamera<br><small>' + err + '</small></div>';
     });
 }
 
+function caricaHtml5QrFallback() {
+    var s = document.createElement('script');
+    s.src = 'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js';
+    s.onload = function() {
+        var h5 = new Html5Qrcode("reader-fallback");
+        h5.start({ facingMode: "user" },
+            { fps: 15, formatsToSupport: [Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.CODE_39] },
+            onScanSuccess, function() {}
+        ).catch(function(e) { mostraStatus('Errore: ' + e, 'err'); });
+    };
+    s.onerror = function() { mostraStatus('Nessun lettore disponibile', 'err'); };
+    document.head.appendChild(s);
+}
+
+function fermaCamera() {
+    if (scanTimer) { clearInterval(scanTimer); scanTimer = null; }
+    if (stream) { stream.getTracks().forEach(function(t) { t.stop(); }); stream = null; }
+    cameraStarted = false;
+}
+
 document.getElementById('stats').addEventListener('toggle', function() {
-    const content = document.getElementById('stats-content');
+    var content = document.getElementById('stats-content');
     content.classList.toggle('open', this.open);
     if (this.open) aggiornaArchivio();
 });
@@ -271,33 +301,34 @@ document.getElementById('btn-reset').addEventListener('click', function() {
 
 var torciaAccesa = false;
 document.getElementById('btn-torcia').addEventListener('click', function() {
-    if (!html5QrCode) return;
+    if (!stream) return;
     torciaAccesa = !torciaAccesa;
-    html5QrCode.applyVideoConstraints({ advanced: [{ torch: torciaAccesa }] }).then(function() {
-        document.getElementById('btn-torcia').classList.toggle('on', torciaAccesa);
-        document.getElementById('btn-torcia').textContent = torciaAccesa ? '\u2600 Torcia' : '\uD83D\uDCA1 Torcia';
-    }).catch(function() {
-        torciaAccesa = false;
-        mostraStatus('Torcia non disponibile', 'err');
-        setTimeout(function() { mostraStatus('In attesa di una tessera...', ''); }, 1500);
-    });
+    var track = stream.getVideoTracks()[0];
+    if (track) {
+        track.applyConstraints({ advanced: [{ torch: torciaAccesa }] }).then(function() {
+            document.getElementById('btn-torcia').classList.toggle('on', torciaAccesa);
+            document.getElementById('btn-torcia').textContent = torciaAccesa ? '\u2600 Torcia' : '\uD83D\uDCA1 Torcia';
+        }).catch(function() {
+            torciaAccesa = false;
+            mostraStatus('Torcia non disponibile', 'err');
+            setTimeout(function() { mostraStatus('In attesa di una tessera...', ''); }, 1500);
+        });
+    }
 });
 
-window.addEventListener('load', () => {
-    const dati = getDati();
+window.addEventListener('load', function() {
+    var dati = getDati();
     if (Object.keys(dati).length > 0) {
         document.getElementById('btn-reset').style.display = '';
-        const cfs = Object.keys(dati);
+        var cfs = Object.keys(dati);
         aggiornaOggi(cfs[0]);
         aggiornaCounter(cfs[0]);
     }
     avviaCamera();
 });
 
-window.addEventListener('beforeunload', () => {
-    if (html5QrCode) {
-        try { html5QrCode.stop(); } catch {}
-    }
+window.addEventListener('beforeunload', function() {
+    fermaCamera();
 });
 </script>
 </body>
