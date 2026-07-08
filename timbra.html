@@ -3,13 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>PRESENZE v1.5</title>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>PRESENZE v1.7</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Segoe UI', sans-serif; background: #0b0e14; color: #fff; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 16px; }
 h1 { font-size: 1.8rem; margin: 16px 0 8px; color: #00e676; text-transform: uppercase; letter-spacing: 2px; }
-#reader { width: 100%; max-width: 500px; margin: 12px auto; border-radius: 12px; overflow: hidden; background: #1a1f2b; }
-#reader video { width: 100%; display: block; border-radius: 12px; }
+#reader { width: 100%; max-width: 500px; max-height: 320px; margin: 12px auto; border-radius: 12px; overflow: hidden; background: #1a1f2b; }
+#reader video { width: 100%; height: auto; max-height: 320px; display: block; border-radius: 12px; object-fit: cover; }
 #reader__dashboard_silent, #reader__dashboard_spinner { display: none !important; }
 #status { font-size: 1.5rem; font-weight: bold; text-align: center; min-height: 60px; display: flex; align-items: center; justify-content: center; width: 100%; max-width: 500px; border-radius: 12px; margin: 8px auto; padding: 12px; transition: all 0.3s; background: #1a1f2b; color: #888; }
 #status.ok { background: #003d1a; color: #00e676; font-size: 2rem; animation: flash 0.6s ease; }
@@ -35,11 +38,19 @@ h1 { font-size: 1.8rem; margin: 16px 0 8px; color: #00e676; text-transform: uppe
 #btn-torcia { padding: 8px 20px; background: #1a1f2b; color: #ffd740; border: 1px solid #ffd740; border-radius: 8px; cursor: pointer; font-size: 0.9rem; margin: 4px auto; display: none; }
 #btn-torcia.on { background: #ffd740; color: #000; }
 #btn-torcia:hover { opacity: 0.8; }
+#manual-area { width: 100%; max-width: 500px; text-align: center; margin: 4px 0; }
+#toggle-manuale { color: #888; font-size: 0.8rem; cursor: pointer; text-decoration: none; }
+#toggle-manuale:hover { color: #00e676; }
+#manual-input { margin-top: 6px; display: flex; gap: 6px; }
+#cf-input { flex: 1; padding: 10px; border: 1px solid #333; border-radius: 8px; background: #1a1f2b; color: #fff; font-size: 1rem; text-transform: uppercase; letter-spacing: 2px; text-align: center; }
+#cf-input:focus { outline: none; border-color: #00e676; }
+#btn-manuale { padding: 10px 16px; background: #00e676; color: #000; border: none; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; }
+#btn-manuale:active { opacity: 0.7; }
 </style>
 </head>
 <body>
 
-<h1>&#x23F3; PRESENZE <span style="font-size:0.7rem;color:#888;letter-spacing:0">v1.5</span></h1>
+<h1>&#x23F3; PRESENZE <span style="font-size:0.7rem;color:#888;letter-spacing:0">v1.7</span></h1>
 <div id="counter"></div>
 <div id="reader">
 <video id="video" autoplay playsinline muted></video>
@@ -48,6 +59,15 @@ h1 { font-size: 1.8rem; margin: 16px 0 8px; color: #00e676; text-transform: uppe
 </div>
 <button id="btn-torcia" style="display:none">&#x1F4A1; Torcia</button>
 <div id="status">In attesa di una tessera...</div>
+<div id="manual-area">
+  <a id="toggle-manuale" href="#">Inserisci CF manualmente</a>
+  <span style="color:#444"> | </span>
+  <a id="btn-ocr" href="#" style="color:#ffd740">Leggi testo tessera</a>
+  <div id="manual-input" style="display:none">
+    <input type="text" id="cf-input" maxlength="16" placeholder="Codice Fiscale" autocomplete="off">
+    <button id="btn-manuale">Timbra</button>
+  </div>
+</div>
 <div id="oggi"></div>
 <details id="stats">
 <summary>&#x1F4CB; Archivio timbrature</summary>
@@ -57,7 +77,7 @@ h1 { font-size: 1.8rem; margin: 16px 0 8px; color: #00e676; text-transform: uppe
 
 <script>
 const CF_STORAGE_KEY = 'timbra_cd_dati';
-const VERSION = 'v1.5';
+const VERSION = 'v1.7';
 
 let stream = null;
 let lastCf = '';
@@ -296,6 +316,95 @@ document.getElementById('btn-reset').addEventListener('click', function() {
     if (confirm('Cancellare TUTTI i dati di timbratura?')) {
         localStorage.removeItem(CF_STORAGE_KEY);
         location.reload();
+    }
+});
+
+document.getElementById('toggle-manuale').addEventListener('click', function(e) {
+    e.preventDefault();
+    var div = document.getElementById('manual-input');
+    div.style.display = div.style.display === 'none' ? 'flex' : 'none';
+    if (div.style.display === 'flex') document.getElementById('cf-input').focus();
+});
+
+document.getElementById('btn-manuale').addEventListener('click', function() {
+    var cf = document.getElementById('cf-input').value.toUpperCase().trim();
+    if (!cf) return;
+    if (!validaCF(cf)) {
+        mostraStatus('Codice non valido', 'err');
+        return;
+    }
+    var dati = getDati();
+    var giorno = oggiStr();
+    var tipo = tipoTimbratura(dati, cf, giorno);
+    if (tipo === null) {
+        mostraStatus('Limite 6 timbrature raggiunto per ' + cf, 'err');
+        return;
+    }
+    registraTimbratura(cf);
+    aggiornaArchivio();
+    document.getElementById('cf-input').value = '';
+    document.getElementById('manual-input').style.display = 'none';
+});
+
+document.getElementById('cf-input').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') document.getElementById('btn-manuale').click();
+});
+
+var tesseractLoaded = false;
+document.getElementById('btn-ocr').addEventListener('click', function(e) {
+    e.preventDefault();
+    if (!cameraStarted || !videoEl || videoEl.readyState < 2) {
+        mostraStatus('Attendi l avvio della fotocamera', 'err');
+        return;
+    }
+    mostraStatus('Leggo il testo... attendi', '');
+    var w = videoEl.videoWidth, h = videoEl.videoHeight;
+    canvasEl.width = w; canvasEl.height = h;
+    canvasEl.getContext('2d').drawImage(videoEl, 0, 0, w, h);
+    var imgData = canvasEl.toDataURL('image/png');
+
+    function eseguiOCR() {
+        Tesseract.recognize(
+            imgData,
+            'ita',
+            { logger: function(m) { if (m.status === 'recognizing text') mostraStatus('OCR: ' + Math.round(m.progress * 100) + '%', ''); } }
+        ).then(function(res) {
+            var testo = res.data.text.toUpperCase();
+            var match = testo.match(/[A-Z]{6}\d{2}[A-Z]\d{2}[A-Z]\d{3}[A-Z]/);
+            if (match && validaCF(match[0])) {
+                var cf = match[0];
+                var dati = getDati();
+                var giorno = oggiStr();
+                var tipo = tipoTimbratura(dati, cf, giorno);
+                if (tipo === null) {
+                    mostraStatus('Limite 6 timbrature raggiunto per ' + cf, 'err');
+                    return;
+                }
+                registraTimbratura(cf);
+                aggiornaArchivio();
+            } else {
+                mostraStatus('Testo non riconosciuto, riprova', 'err');
+                setTimeout(function() { mostraStatus('In attesa di una tessera...', ''); }, 2000);
+            }
+        }).catch(function(err) {
+            mostraStatus('Errore OCR: ' + err, 'err');
+        });
+    }
+
+    if (tesseractLoaded) {
+        eseguiOCR();
+    } else {
+        mostraStatus('Carico motore OCR...', '');
+        var s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+        s.onload = function() {
+            tesseractLoaded = true;
+            eseguiOCR();
+        };
+        s.onerror = function() {
+            mostraStatus('Errore caricamento OCR', 'err');
+        };
+        document.head.appendChild(s);
     }
 });
 
