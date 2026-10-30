@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#2980b9">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Conta Acqua">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="images/icon-192.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="images/icon-192.svg">
+<title>Segna la Tua Acqua</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{
+width:100%;height:100%;
+font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+background:#f5f5f5;
+overflow-x:hidden
+}
+body{
+padding:1vh 1vw;
+display:flex;flex-direction:column;
+min-height:100vh;min-height:100dvh
+}
+.header{
+text-align:center;
+margin-bottom:1vh;
+flex-shrink:0
+}
+.header h1{
+font-size:clamp(1.2rem,3.5vw,2.2rem);
+font-weight:900;
+color:#000;
+text-transform:uppercase;
+letter-spacing:1px
+}
+.date-display{
+display:flex;
+justify-content:center;
+gap:clamp(10px,3vw,25px);
+font-size:clamp(0.9rem,2vw,1.2rem);
+color:#333;
+margin-top:0.5vh
+}
+.date-display span{
+font-weight:600
+}
+.main-container{
+display:flex;
+gap:clamp(8px,1.5vw,20px);
+justify-content:center;
+flex:1;
+min-height:0;
+max-height:85vh
+}
+.water-card{
+flex:1;
+border-radius:clamp(12px,2vw,20px);
+padding:clamp(10px,2vw,25px) clamp(8px,1.5vw,20px);
+text-align:center;
+display:flex;flex-direction:column;
+overflow:hidden;
+position:relative
+}
+@keyframes celebrate{
+0%{transform:scale(1) rotate(0deg);box-shadow:0 0 0 rgba(255,215,0,0)}
+15%{transform:scale(1.25) rotate(-8deg);box-shadow:0 0 40px rgba(255,215,0,.9)}
+35%{transform:scale(1.35) rotate(8deg);box-shadow:0 0 60px rgba(255,105,180,1)}
+55%{transform:scale(1.2) rotate(-5deg);box-shadow:0 0 35px rgba(255,215,0,.8)}
+75%{transform:scale(1.1) rotate(3deg);box-shadow:0 0 20px rgba(255,215,0,.6)}
+100%{transform:scale(1) rotate(0deg);box-shadow:0 0 0 rgba(255,215,0,0)}
+}
+.water-card.celebrate{animation:celebrate 1.6s cubic-bezier(.36,.07,.19,.97);z-index:5}
+@keyframes popNum{
+0%{transform:scale(1)}
+40%{transform:scale(2.2)}
+100%{transform:scale(1)}
+}
+.count-number.pop{animation:popNum .8s ease}
+@keyframes celebFade{
+0%{opacity:0}
+15%{opacity:1}
+85%{opacity:1}
+100%{opacity:0}
+}
+@keyframes celebPop{
+0%{transform:scale(0) rotate(-20deg)}
+60%{transform:scale(1.25) rotate(8deg)}
+100%{transform:scale(1) rotate(0deg)}
+}
+.celeb-overlay{
+position:absolute;inset:0;
+display:flex;flex-direction:column;align-items:center;justify-content:center;
+background:rgba(255,255,255,.5);
+z-index:20;pointer-events:none;
+animation:celebFade 1.6s ease forwards
+}
+.celeb-emoji{font-size:clamp(3rem,9vw,5.5rem);animation:celebPop .6s ease;line-height:1}
+.celeb-text{font-size:clamp(1.2rem,3.5vw,2.2rem);font-weight:900;color:#333;margin-top:4px;text-transform:uppercase;letter-spacing:1px}
+@keyframes confettiBurst{
+0%{transform:translate(-50%,-50%) scale(1);opacity:1}
+100%{transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(0);opacity:0}
+}
+.confetti{
+position:absolute;top:50%;left:50%;
+width:12px;height:12px;border-radius:50%;
+pointer-events:none;z-index:20;
+animation:confettiBurst 1.6s ease-out forwards
+}
+.card-naturale{
+background:linear-gradient(180deg,#d6eaf8 0%,#aed6f1 50%,#85c1e9 100%)
+}
+.card-frizzante{
+background:linear-gradient(180deg,#d5f5e3 0%,#abebc6 50%,#82e0aa 100%)
+}
+.card-caffe{
+background:linear-gradient(180deg,#f5e6d3 0%,#e8c9a0 50%,#d4a574 100%)
+}
+.card-title{
+font-size:clamp(0.95rem,2.5vw,1.6rem);
+font-weight:900;
+color:#1a1a1a;
+margin-bottom:1vh;
+text-transform:uppercase;
+flex-shrink:0
+}
+.bottle-area{
+flex:1;
+display:flex;
+justify-content:center;
+align-items:center;
+min-height:0
+}
+.bottle-svg{
+max-height:100%;
+width:auto;
+max-width:90%
+}
+.count-section{
+flex-shrink:0;
+margin:1vh 0
+}
+.totale-label{
+font-size:clamp(0.75rem,1.8vw,1rem);
+color:#333;
+font-weight:700
+}
+.count-number{
+font-size:clamp(3rem,10vw,5.5rem);
+font-weight:900;
+color:#1a1a1a;
+line-height:1;
+margin:0.5vh 0
+}
+.bottiglie-label{
+font-size:clamp(0.85rem,2vw,1.3rem);
+font-weight:800;
+color:#1a1a1a;
+text-transform:uppercase
+}
+.add-button{
+width:100%;
+padding:clamp(12px,2.5vw,22px);
+color:white;
+font-size:clamp(0.8rem,2vw,1.1rem);
+font-weight:800;
+text-transform:uppercase;
+border:none;
+border-radius:clamp(6px,1vw,12px);
+cursor:pointer;
+transition:transform 0.12s, opacity 0.2s;
+flex-shrink:0;
+letter-spacing:0.5px;
+margin-top:auto
+}
+.add-button:active{transform:scale(0.96)}
+.btn-naturale{background:#2980b9}
+.btn-frizzante{background:#27ae60}
+.btn-caffe{background:#795548}
+.add-button:hover{opacity:0.88}
+#reset-overlay{
+position:fixed;top:0;left:0;right:0;bottom:0;
+background:rgba(0,0,0,0.7);
+display:none;justify-content:center;align-items:center;
+z-index:1000
+}
+#reset-overlay.show{display:flex}
+#reset-box{
+background:#fff;border-radius:16px;padding:30px 40px;
+text-align:center;max-width:320px;width:85%
+}
+#reset-box h2{font-size:1.2rem;color:#333;margin-bottom:8px}
+#reset-box p{font-size:0.9rem;color:#666;margin-bottom:20px}
+#reset-box .btns{display:flex;gap:12px}
+#reset-box .btns button{
+flex:1;padding:12px;border:none;border-radius:8px;
+font-weight:700;font-size:0.95rem;cursor:pointer
+}
+#btn-confirm{background:#e74c3c;color:#fff}
+#btn-cancel{background:#ccc;color:#333}
+.header h1{-webkit-user-select:none;user-select:none;cursor:default}
+@media screen and (orientation:portrait) and (min-device-width:768px){
+#rotate-hint{
+position:fixed;top:0;left:0;right:0;bottom:0;
+background:#2980b9;color:#fff;display:flex;
+flex-direction:column;justify-content:center;align-items:center;
+z-index:9999;font-size:1.5rem;text-align:center;padding:40px
+}
+#rotate-hint span{font-size:3rem;margin-bottom:20px}
+}
+@media screen and (orientation:landscape){
+#rotate-hint{display:none!important}
+}
+#install-banner{
+display:none;
+position:fixed;bottom:0;left:0;right:0;
+background:#2980b9;color:#fff;
+padding:14px 20px;
+z-index:999;
+justify-content:space-between;align-items:center;
+gap:12px;
+font-size:0.95rem;
+box-shadow:0 -4px 12px rgba(0,0,0,0.15)
+}
+#install-banner.show{display:flex}
+#install-banner button{
+background:#fff;color:#2980b9;
+border:none;padding:10px 20px;
+border-radius:8px;font-weight:800;
+font-size:0.95rem;cursor:pointer;
+white-space:nowrap
+}
+#install-banner .close{
+background:transparent;color:rgba(255,255,255,0.7);
+border:none;font-size:1.4rem;cursor:pointer;
+padding:0 4px;line-height:1
+}
+</style>
+</head>
+<body>
+
+<div id="rotate-hint">
+<span>&#x1f4f1;</span>
+Ruota il tablet in<br>orizzontale</div>
+
+<div id="reset-overlay">
+<div id="reset-box">
+<h2>Reset contatori?</h2>
+<p>Azzera entrambi i contatori a zero.</p>
+<div class="btns">
+<button id="btn-confirm">Sì, resetta</button>
+<button id="btn-cancel">Annulla</button>
+</div>
+</div>
+</div>
+
+<div class="header">
+<h1 id="reset-trigger">Segna la Tua Acqua</h1>
+<div class="date-display">
+<span id="day"></span>
+<span id="month"></span>
+<span id="year"></span>
+</div>
+</div>
+
+<div class="main-container">
+
+<div class="water-card card-naturale">
+<div class="card-title">Acqua Naturale</div>
+<div class="bottle-area">
+<svg class="bottle-svg" viewBox="0 0 260 320" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<linearGradient id="gBodyN" x1="130" y1="30" x2="130" y2="300" gradientUnits="userSpaceOnUse">
+<stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"/>
+<stop offset="30%" stop-color="#eaf6ff"/>
+<stop offset="100%" stop-color="#d4eefb"/>
+</linearGradient>
+<linearGradient id="gCapN" x1="130" y1="0" x2="130" y2="28" gradientUnits="userSpaceOnUse">
+<stop offset="0%" stop-color="#1565c0"/>
+<stop offset="100%" stop-color="#0d47a1"/>
+</linearGradient>
+<filter id="shadowN"><feDropShadow dx="2" dy="4" stdDeviation="3" flood-opacity="0.15"/></filter>
+</defs>
+<ellipse cx="130" cy="308" rx="52" ry="6" fill="#000" opacity="0.08"/>
+<g filter="url(#shadowN)">
+<path d="M96 52 C96 38 108 32 130 32 C152 32 164 38 164 52 L164 66 L96 66 Z" fill="url(#gBodyN)" stroke="#b0d4e8" stroke-width="1.5"/>
+<rect x="84" y="66" width="92" height="228" rx="12" fill="url(#gBodyN)" stroke="#b0d4e8" stroke-width="1.5"/>
+<path d="M84 270 Q84 290 130 290 Q176 290 176 270" fill="url(#gBodyN)" stroke="#b0d4e8" stroke-width="1.5"/>
+<rect x="98" y="36" width="64" height="30" rx="4" fill="#bde4f4" opacity="0.3"/>
+<path d="M100 20 L100 8 C100 3 105 0 130 0 C155 0 160 3 160 8 L160 20" fill="url(#gCapN)" stroke="#0d47a1" stroke-width="1"/>
+<rect x="100" y="0" width="60" height="12" rx="4" fill="#1565c0"/>
+<rect x="96" y="4" width="68" height="4" rx="1" fill="#42a5f5" opacity="0.4"/>
+<rect x="76" y="120" width="108" height="105" rx="8" fill="#ffffff" stroke="#c5dbe8" stroke-width="1"/>
+<path d="M96 135 C102 131 112 129 130 129 C148 129 158 131 164 135" fill="none" stroke="#2196f3" stroke-width="1.6"/>
+<ellipse cx="130" cy="147" rx="14" ry="12" fill="none" stroke="#2196f3" stroke-width="1.2"/>
+<text x="130" y="172" text-anchor="middle" font-size="12" fill="#1a5276" font-weight="900" font-family="Arial,sans-serif">SAN BENEDETTO</text>
+<text x="130" y="192" text-anchor="middle" font-size="9" fill="#2e86c1" font-family="Arial,sans-serif">Acqua Minerale</text>
+<text x="130" y="220" text-anchor="middle" font-size="24" fill="#1a5276" font-weight="900" font-family="Arial,sans-serif">Naturale</text>
+<rect x="76" y="228" width="108" height="2" rx="1" fill="#5dade2" opacity="0.3"/>
+</g>
+</svg>
+</div>
+<div class="count-section">
+<div class="totale-label">TOTALE OGGI:</div>
+<div class="count-number" id="c-naturale">0</div>
+<div class="bottiglie-label">BOTTIGLIE</div>
+</div>
+<button class="add-button btn-naturale" data-key="naturale">CLICCA PER<br>AGGIUNGERE</button>
+</div>
+
+<div class="water-card card-caffe">
+<div class="card-title">Tazzina di Caffè</div>
+<div class="bottle-area">
+<svg class="bottle-svg" viewBox="0 0 260 320" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<linearGradient id="gCup" x1="130" y1="80" x2="130" y2="290" gradientUnits="userSpaceOnUse">
+<stop offset="0%" stop-color="#fafafa"/>
+<stop offset="50%" stop-color="#efebe9"/>
+<stop offset="100%" stop-color="#d7ccc8"/>
+</linearGradient>
+<filter id="shadowC"><feDropShadow dx="2" dy="4" stdDeviation="3" flood-opacity="0.15"/></filter>
+</defs>
+<ellipse cx="130" cy="302" rx="78" ry="8" fill="#000" opacity="0.08"/>
+<g filter="url(#shadowC)">
+<ellipse cx="130" cy="288" rx="86" ry="13" fill="#efebe9" stroke="#a1887f" stroke-width="1.5"/>
+<path d="M78 125 L88 255 Q130 282 172 255 L182 125 Z" fill="url(#gCup)" stroke="#8d6e63" stroke-width="1.5"/>
+<ellipse cx="130" cy="128" rx="52" ry="12" fill="#4e342e"/>
+<ellipse cx="130" cy="128" rx="52" ry="12" fill="none" stroke="#3e2723" stroke-width="1"/>
+<path d="M182 145 Q222 165 222 200 Q222 235 182 252" fill="none" stroke="#8d6e63" stroke-width="13" stroke-linecap="round"/>
+<path d="M100 95 Q95 72 105 55" fill="none" stroke="#bdbdbd" stroke-width="3" stroke-linecap="round" opacity="0.6"/>
+<path d="M130 90 Q125 62 135 40" fill="none" stroke="#bdbdbd" stroke-width="3" stroke-linecap="round" opacity="0.6"/>
+<path d="M160 95 Q155 72 165 55" fill="none" stroke="#bdbdbd" stroke-width="3" stroke-linecap="round" opacity="0.6"/>
+<rect x="76" y="155" width="108" height="80" rx="8" fill="#ffffff" stroke="#d7ccc8" stroke-width="1"/>
+<text x="130" y="180" text-anchor="middle" font-size="13" fill="#5d4037" font-weight="900" font-family="Arial,sans-serif">CAFFÈ</text>
+<text x="130" y="200" text-anchor="middle" font-size="9" fill="#795548" font-family="Arial,sans-serif">Tazzina</text>
+<text x="130" y="228" text-anchor="middle" font-size="20" fill="#4e342e" font-weight="900" font-family="Arial,sans-serif">Espresso</text>
+<rect x="76" y="238" width="108" height="2" rx="1" fill="#a1887f" opacity="0.3"/>
+</g>
+</svg>
+</div>
+<div class="count-section">
+<div class="totale-label">TOTALE OGGI:</div>
+<div class="count-number" id="c-caffe">0</div>
+<div class="bottiglie-label">TAZZINE</div>
+</div>
+<button class="add-button btn-caffe" data-key="caffe">CLICCA PER<br>AGGIUNGERE</button>
+</div>
+
+<div class="water-card card-frizzante">
+<div class="card-title">Acqua Frizzante</div>
+<div class="bottle-area">
+<svg class="bottle-svg" viewBox="0 0 260 320" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<linearGradient id="gBodyF" x1="130" y1="30" x2="130" y2="300" gradientUnits="userSpaceOnUse">
+<stop offset="0%" stop-color="#e3f2fd"/>
+<stop offset="40%" stop-color="#bbdefb"/>
+<stop offset="100%" stop-color="#90caf9"/>
+</linearGradient>
+<linearGradient id="gCapF" x1="130" y1="0" x2="130" y2="28" gradientUnits="userSpaceOnUse">
+<stop offset="0%" stop-color="#e53935"/>
+<stop offset="100%" stop-color="#c62828"/>
+</linearGradient>
+<filter id="shadowF"><feDropShadow dx="2" dy="4" stdDeviation="3" flood-opacity="0.15"/></filter>
+</defs>
+<ellipse cx="130" cy="308" rx="52" ry="6" fill="#000" opacity="0.08"/>
+<g filter="url(#shadowF)">
+<path d="M96 52 C96 38 108 32 130 32 C152 32 164 38 164 52 L164 66 L96 66 Z" fill="url(#gBodyF)" stroke="#90caf9" stroke-width="1.5"/>
+<rect x="84" y="66" width="92" height="228" rx="12" fill="url(#gBodyF)" stroke="#90caf9" stroke-width="1.5"/>
+<path d="M84 270 Q84 290 130 290 Q176 290 176 270" fill="url(#gBodyF)" stroke="#90caf9" stroke-width="1.5"/>
+<rect x="98" y="36" width="64" height="30" rx="4" fill="#90caf9" opacity="0.3"/>
+<path d="M100 20 L100 8 C100 3 105 0 130 0 C155 0 160 3 160 8 L160 20" fill="url(#gCapF)" stroke="#c62828" stroke-width="1"/>
+<rect x="100" y="0" width="60" height="12" rx="4" fill="#e53935"/>
+<rect x="96" y="4" width="68" height="4" rx="1" fill="#ef9a9a" opacity="0.4"/>
+<circle cx="102" cy="95" r="5" fill="white" opacity="0.35"/>
+<circle cx="148" cy="110" r="4" fill="white" opacity="0.3"/>
+<circle cx="98" cy="140" r="6" fill="white" opacity="0.35"/>
+<circle cx="150" cy="155" r="4.5" fill="white" opacity="0.3"/>
+<circle cx="105" cy="180" r="5.5" fill="white" opacity="0.35"/>
+<circle cx="142" cy="200" r="5" fill="white" opacity="0.3"/>
+<circle cx="100" cy="230" r="4.5" fill="white" opacity="0.35"/>
+<circle cx="145" cy="250" r="4" fill="white" opacity="0.3"/>
+<circle cx="108" cy="265" r="3.5" fill="white" opacity="0.35"/>
+<circle cx="155" cy="280" r="4" fill="white" opacity="0.3"/>
+<circle cx="120" cy="105" r="3" fill="white" opacity="0.25"/>
+<circle cx="135" cy="130" r="3.5" fill="white" opacity="0.25"/>
+<circle cx="118" cy="160" r="3" fill="white" opacity="0.25"/>
+<circle cx="138" cy="175" r="3.5" fill="white" opacity="0.25"/>
+<circle cx="115" cy="210" r="3" fill="white" opacity="0.25"/>
+<circle cx="140" cy="230" r="3" fill="white" opacity="0.25"/>
+<circle cx="122" cy="252" r="3" fill="white" opacity="0.25"/>
+<circle cx="135" cy="270" r="2.5" fill="white" opacity="0.25"/>
+<rect x="76" y="120" width="108" height="105" rx="8" fill="#ffffff" stroke="#b0d4e8" stroke-width="1"/>
+<path d="M96 135 C102 131 112 129 130 129 C148 129 158 131 164 135" fill="none" stroke="#2196f3" stroke-width="1.6"/>
+<ellipse cx="130" cy="147" rx="14" ry="12" fill="none" stroke="#2196f3" stroke-width="1.2"/>
+<text x="130" y="172" text-anchor="middle" font-size="12" fill="#1a5276" font-weight="900" font-family="Arial,sans-serif">SAN BENEDETTO</text>
+<text x="130" y="192" text-anchor="middle" font-size="9" fill="#e74c3c" font-family="Arial,sans-serif">Acqua Minerale</text>
+<text x="130" y="220" text-anchor="middle" font-size="24" fill="#c62828" font-weight="900" font-family="Arial,sans-serif">Frizzante</text>
+<rect x="76" y="228" width="108" height="2" rx="1" fill="#ef5350" opacity="0.3"/>
+</g>
+</svg>
+</div>
+<div class="count-section">
+<div class="totale-label">TOTALE OGGI:</div>
+<div class="count-number" id="c-frizzante">0</div>
+<div class="bottiglie-label">BOTTIGLIE</div>
+</div>
+<button class="add-button btn-frizzante" data-key="frizzante">CLICCA PER<br>AGGIUNGERE</button>
+</div>
+
+</div>
+
+<div id="install-banner">
+<span>Installa l'app per un accesso rapido</span>
+<button id="install-btn">Installa</button>
+<button class="close" id="install-close">&times;</button>
+</div>
+
+<script>
+const data = {naturale:0, frizzante:0, caffe:0}
+const key = 'acqua-counts'
+const today = new Date().toDateString()
+const savedDay = localStorage.getItem(key+'-day')
+
+if (savedDay === today) {
+const saved = localStorage.getItem(key)
+if (saved) {
+const p = JSON.parse(saved)
+data.naturale = p.naturale ?? 0
+data.frizzante = p.frizzante ?? 0
+data.caffe = p.caffe ?? 0
+}
+}
+
+function save(){
+localStorage.setItem(key, JSON.stringify(data))
+localStorage.setItem(key+'-day', today)
+}
+
+function render(){
+document.getElementById('c-naturale').textContent = data.naturale
+document.getElementById('c-frizzante').textContent = data.frizzante
+document.getElementById('c-caffe').textContent = data.caffe
+}
+
+const burstEmoji = {naturale:'💧', frizzante:'✨', caffe:'☕'}
+
+let audioCtx = null
+function playCelebrationSound(){
+try {
+if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)()
+const ctx = audioCtx
+const now = ctx.currentTime
+const notes = [523.25, 587.33, 659.25, 783.99, 880.00, 1046.50, 1318.51]
+notes.forEach((freq, i) => {
+const osc = ctx.createOscillator()
+const gain = ctx.createGain()
+osc.type = 'triangle'
+osc.frequency.value = freq
+const start = now + i * 0.13
+const dur = 0.22
+gain.gain.setValueAtTime(0, start)
+gain.gain.linearRampToValueAtTime(0.25, start + 0.02)
+gain.gain.exponentialRampToValueAtTime(0.001, start + dur)
+osc.connect(gain).connect(ctx.destination)
+osc.start(start)
+osc.stop(start + dur)
+})
+} catch(e) {}
+}
+document.querySelectorAll('.water-card').forEach(el => {
+el.addEventListener('click', (e) => {
+if (e.target.closest('#reset-overlay')) return
+const k = el.querySelector('.add-button').dataset.key
+data[k]++
+render()
+save()
+if (data[k] > 0 && data[k] % 10 === 0) {
+el.classList.remove('celebrate')
+void el.offsetWidth
+el.classList.add('celebrate')
+const num = el.querySelector('.count-number')
+num.classList.remove('pop')
+void num.offsetWidth
+num.classList.add('pop')
+const overlay = document.createElement('div')
+overlay.className = 'celeb-overlay'
+const emoji = burstEmoji[k] || '🎉'
+overlay.innerHTML = '<div class="celeb-emoji">' + emoji + '</div><div class="celeb-text">Bravo! ' + data[k] + '</div>'
+el.appendChild(overlay)
+setTimeout(() => overlay.remove(), 1600)
+const colors = ['#ff5252','#ffeb3b','#4caf50','#2196f3','#e040fb','#ff9800','#00bcd4','#f44336','#9c27b0']
+for (let i = 0; i < 40; i++) {
+const c = document.createElement('div')
+c.className = 'confetti'
+const angle = (Math.PI * 2 * i) / 40 + Math.random() * 0.3
+const dist = 90 + Math.random() * 90
+c.style.setProperty('--dx', Math.cos(angle) * dist + 'px')
+c.style.setProperty('--dy', Math.sin(angle) * dist + 'px')
+c.style.background = colors[i % colors.length]
+el.appendChild(c)
+setTimeout(() => c.remove(), 1600)
+}
+if (navigator.vibrate) { try { navigator.vibrate([80,50,80,50,120]) } catch(e) {} }
+playCelebrationSound()
+setTimeout(() => { el.classList.remove('celebrate'); num.classList.remove('pop') }, 1600)
+}
+})
+})
+
+const now = new Date()
+document.getElementById('day').textContent = now.getDate()
+document.getElementById('month').textContent = now.getMonth() + 1
+document.getElementById('year').textContent = now.getFullYear()
+
+render()
+
+if ('serviceWorker' in navigator) {
+navigator.serviceWorker.register('sw.js')
+}
+
+try { screen.orientation.lock('landscape') } catch(e) {}
+document.addEventListener('click', () => {
+try { screen.orientation.lock('landscape') } catch(e) {}
+}, {once:true})
+
+let wakeLock = null
+async function keepAwake(){
+try {
+wakeLock = await navigator.wakeLock.request('screen')
+wakeLock.addEventListener('release', () => {})
+} catch(e) {}
+}
+keepAwake()
+document.addEventListener('visibilitychange', () => {
+if (document.visibilityState === 'visible') keepAwake()
+})
+
+let deferredPrompt = null
+const installBanner = document.getElementById('install-banner')
+const installBtn = document.getElementById('install-btn')
+const installClose = document.getElementById('install-close')
+
+window.addEventListener('beforeinstallprompt', (e) => {
+e.preventDefault()
+deferredPrompt = e
+installBanner.classList.add('show')
+})
+
+installBtn.addEventListener('click', async () => {
+if (!deferredPrompt) return
+deferredPrompt.prompt()
+const result = await deferredPrompt.userChoice
+deferredPrompt = null
+installBanner.classList.remove('show')
+})
+
+installClose.addEventListener('click', () => {
+installBanner.classList.remove('show')
+})
+
+let pressTimer = null
+const trigger = document.getElementById('reset-trigger')
+const overlay = document.getElementById('reset-overlay')
+
+function startPress(e){
+e.preventDefault()
+pressTimer = setTimeout(() => {
+overlay.classList.add('show')
+}, 800)
+}
+function cancelPress(){
+clearTimeout(pressTimer)
+pressTimer = null
+}
+
+trigger.addEventListener('mousedown', startPress)
+trigger.addEventListener('mouseup', cancelPress)
+trigger.addEventListener('mouseleave', cancelPress)
+trigger.addEventListener('touchstart', startPress, {passive:false})
+trigger.addEventListener('touchend', cancelPress)
+trigger.addEventListener('touchcancel', cancelPress)
+
+document.getElementById('btn-confirm').addEventListener('click', () => {
+data.naturale = 0
+data.frizzante = 0
+data.caffe = 0
+render()
+save()
+overlay.classList.remove('show')
+})
+document.getElementById('btn-cancel').addEventListener('click', () => {
+overlay.classList.remove('show')
+})
+</script>
+
+</body>
+</html>
